@@ -157,6 +157,10 @@ if [ -n "$WEB_SYSTEM" ]; then
 		sed -i 's/directPORT/'$WEB_PORT'/g' "$web_conf"
 
 	elif [ "$WEB_SYSTEM" = 'nginx' ]; then
+		if [ ! -f /etc/nginx/ssl/default/cert.pem ]; then
+			mkdir -p /etc/nginx/ssl/default
+			openssl req -x509 -newkey rsa:4096 -days 36500 -keyout /etc/nginx/ssl/default/privkey.pem -out /etc/nginx/ssl/default/cert.pem -subj "/CN=default" -nodes > /dev/null 2>&1
+		fi
 		cp -f $HESTIA_INSTALL_DIR/nginx/unassigned.inc "$web_conf"
 		sed -i 's/directIP/'$ip'/g' "$web_conf"
 		process_http2_directive "$web_conf"

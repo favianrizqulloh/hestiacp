@@ -3,28 +3,18 @@ server {
 	server_name _;
 	access_log off;
 	error_log /dev/null;
-
-	location / {
-		proxy_pass http://%ip%:%web_port%;
-   }
+	return 444;
 }
 
 server {
 	listen %ip%:%proxy_ssl_port% default_server ssl;
+	listen %ip%:%proxy_ssl_port% quic;
 	server_name _;
 	access_log off;
 	error_log /dev/null;
 
-	ssl_certificate     /usr/local/hestia/ssl/certificate.crt;
-	ssl_certificate_key /usr/local/hestia/ssl/certificate.key;
+	ssl_certificate     /etc/nginx/ssl/default/cert.pem;
+	ssl_certificate_key /etc/nginx/ssl/default/privkey.pem;
 
-	return 301 http://$host$request_uri;
-
-	location / {
-		root /var/www/document_errors/;
-	}
-
-	location /error/ {
-		alias /var/www/document_errors/;
-	}
+	return 444;
 }

@@ -1454,8 +1454,8 @@ cp -rf $HESTIA_COMMON_DIR/templates/dns/ $HESTIA/data/templates
 mkdir -p /var/www/html
 mkdir -p /var/www/document_errors
 
-# Install default success page
-cp -rf $HESTIA_COMMON_DIR/templates/web/unassigned/index.html /var/www/html/
+# Clear default web directory (unassigned hosts return 444)
+rm -rf /var/www/html/*
 cp -rf $HESTIA_COMMON_DIR/templates/web/skel/document_errors/* /var/www/document_errors/
 
 # Installing firewall rules
@@ -2444,6 +2444,21 @@ chmod 755 /backup/
 
 # Create cronjob to generate ssl
 echo "@reboot root sleep 10 && rm /etc/cron.d/hestia-ssl && PATH='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:' && /usr/local/hestia/bin/v-add-letsencrypt-host" > /etc/cron.d/hestia-ssl
+
+# Attempt to obtain Let's Encrypt SSL certificate for hostname immediately if DNS resolves
+resolved_ip=$(getent ahostsv4 "$servername" 2>/dev/null | head -n1 | awk '{print $1}')
+if [ -z "$resolved_ip" ] && command -v host > /dev/null 2>&1; then
+	resolved_ip=$(host "$servername" 2>/dev/null | head -n 1 | awk '{print $NF}')
+fi
+
+if [ -n "$resolved_ip" ] && { [ "$resolved_ip" = "$ip" ] || [ "$resolved_ip" = "$pub_ipv4" ]; }; then
+	echo "[ * ] Requesting Let's Encrypt SSL certificate for $servername..."
+	SCHEDULED_RESTART="no" $HESTIA/bin/v-add-letsencrypt-host > /dev/null 2>&1
+	if [ -f "$HESTIA/ssl/certificate.crt" ] && ! openssl x509 -in "$HESTIA/ssl/certificate.crt" -issuer -noout 2>/dev/null | grep -q "Hestia Control Panel"; then
+		echo "[ * ] Let's Encrypt SSL certificate installed successfully for $servername."
+		rm -f /etc/cron.d/hestia-ssl
+	fi
+fi
 
 #----------------------------------------------------------#
 #              Set hestia.conf default values              #
