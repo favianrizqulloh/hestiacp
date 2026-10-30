@@ -647,9 +647,6 @@ install_welcome_message
 
 # Web stack
 echo '   - NGINX Web Server (Standalone)'
-if false; then
-
-fi
 if [ "$phpfpm" = 'yes' ] && [ "$multiphp" = 'no' ]; then
 	echo '   - PHP-FPM Application Server'
 fi
@@ -870,12 +867,6 @@ echo "[ * ] PHP"
 echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/sury-keyring.gpg] https://packages.sury.org/php/ $codename main" > $apt/php.list
 curl -s https://packages.sury.org/php/apt.gpg | gpg --dearmor | tee /usr/share/keyrings/sury-keyring.gpg > /dev/null 2>&1
 
-# Installing sury Apache2 repo
-if false; then
-	echo "[ * ] Apache2"
-
-	curl -s https://packages.sury.org/apache2/apt.gpg | gpg --dearmor | tee /usr/share/keyrings/apache2-keyring.gpg > /dev/null 2>&1
-fi
 
 # Installing MariaDB repo
 if [ "$mysql" = 'yes' ]; then
@@ -1332,38 +1323,14 @@ chmod 660 $HESTIA/conf/hestia.conf
 write_config_value "BACKEND_PORT" "8083"
 
 # Web stack
-if false; then
-	write_config_value "WEB_SYSTEM" "nginx"
-	write_config_value "WEB_PORT" "80"
-	write_config_value "WEB_SSL_PORT" "443"
-	write_config_value "WEB_SSL" "openssl"
-	write_config_value "PROXY_SYSTEM" ""
-	write_config_value "PROXY_PORT" ""
-	write_config_value "PROXY_SSL_PORT" ""
-	write_config_value "PROXY_SYSTEM" ""
-	write_config_value "PROXY_PORT" ""
-	write_config_value "PROXY_SSL_PORT" ""
-	write_config_value "WEB_BACKEND" "php-fpm"
-	write_config_value "STATS_SYSTEM" "awstats"
-	write_config_value "WEB_RGROUPS" "www-data"
-	write_config_value "WEB_PORT" "8080"
-	write_config_value "WEB_SSL_PORT" "8443"
-	write_config_value "WEB_SSL" "mod_ssl"
-	write_config_value "PROXY_SYSTEM" "nginx"
-	write_config_value "PROXY_PORT" "80"
-	write_config_value "PROXY_SSL_PORT" "443"
-	write_config_value "STATS_SYSTEM" "awstats"
-fi
-if [ "$apache" = 'no' ]; then
-	write_config_value "WEB_SYSTEM" "nginx"
-	write_config_value "WEB_PORT" "80"
-	write_config_value "WEB_SSL_PORT" "443"
-	write_config_value "WEB_SSL" "openssl"
-	write_config_value "PROXY_SYSTEM" ""
-	write_config_value "PROXY_PORT" ""
-	write_config_value "PROXY_SSL_PORT" ""
-	write_config_value "STATS_SYSTEM" "awstats"
-fi
+write_config_value "WEB_SYSTEM" "nginx"
+write_config_value "WEB_PORT" "80"
+write_config_value "WEB_SSL_PORT" "443"
+write_config_value "WEB_SSL" "openssl"
+write_config_value "PROXY_SYSTEM" ""
+write_config_value "PROXY_PORT" ""
+write_config_value "PROXY_SSL_PORT" ""
+write_config_value "STATS_SYSTEM" "awstats"
 if [ "$phpfpm" = 'yes' ]; then
 	write_config_value "WEB_BACKEND" "php-fpm"
 fi
@@ -1654,58 +1621,7 @@ check_result $? "nginx start failed"
 #                    Configure Apache                      #
 #----------------------------------------------------------#
 
-if false; then
-	echo "[ * ] Configuring Apache Web Server..."
-
-	mkdir -p /etc/apache2/conf.d
-	mkdir -p /etc/apache2/conf.d/domains
-
-	# Copy configuration files
-	cp -f $HESTIA_INSTALL_DIR/apache2/apache2.conf /etc/apache2/
-	cp -f $HESTIA_INSTALL_DIR/apache2/status.conf /etc/apache2/mods-available/hestia-status.conf
-	cp -f /etc/apache2/mods-available/status.load /etc/apache2/mods-available/hestia-status.load
-	cp -f $HESTIA_INSTALL_DIR/logrotate/apache2 /etc/logrotate.d/
-
-	# Enable needed modules
-	a2enmod rewrite > /dev/null 2>&1
-	a2enmod suexec > /dev/null 2>&1
-	a2enmod ssl > /dev/null 2>&1
-	a2enmod actions > /dev/null 2>&1
-	a2enmod headers > /dev/null 2>&1
-	a2dismod --quiet status > /dev/null 2>&1
-	a2enmod --quiet hestia-status > /dev/null 2>&1
-
-	# Enable mod_ruid/mpm_itk or mpm_event
-	if [ "$phpfpm" = 'yes' ]; then
-		# Disable prefork and php, enable event
-		a2dismod php$fpm_v > /dev/null 2>&1
-		a2dismod mpm_prefork > /dev/null 2>&1
-		a2enmod mpm_event > /dev/null 2>&1
-		cp -f $HESTIA_INSTALL_DIR/apache2/hestia-event.conf /etc/apache2/conf.d/
-	else
-		a2enmod mpm_itk > /dev/null 2>&1
-	fi
-
-	echo "# Powered by hestia" > /etc/apache2/sites-available/default
-	echo "# Powered by hestia" > /etc/apache2/sites-available/default-ssl
-	echo "# Powered by hestia" > /etc/apache2/ports.conf
-	echo -e "/home\npublic_html/cgi-bin" > /etc/apache2/suexec/www-data
-	touch /var/log/apache2/access.log /var/log/apache2/error.log
-	mkdir -p /var/log/apache2/domains
-	chmod a+x /var/log/apache2
-	chmod 640 /var/log/apache2/access.log /var/log/apache2/error.log
-	chmod 751 /var/log/apache2/domains
-
-	# Prevent remote access to server-status page
-	sed -i '/Allow from all/d' /etc/apache2/mods-available/hestia-status.conf
-
-	update-rc.d apache2 defaults > /dev/null 2>&1
-	systemctl start apache2 >> $LOG
-	check_result $? "apache2 start failed"
-else
-	update-rc.d apache2 disable > /dev/null 2>&1
-	
-fi
+# Apache2 removed (NGINX standalone)
 
 #----------------------------------------------------------#
 #                     Configure PHP-FPM                    #
@@ -1897,10 +1813,6 @@ if [ "$mysql" = 'yes' ] || [ "$mysql8" = 'yes' ]; then
 	mkdir -p /etc/phpmyadmin/conf.d/
 	mkdir /usr/share/phpmyadmin/tmp
 
-	# Configuring Apache2 for PHPMYADMIN
-	if false; then
-		touch /etc/apache2/conf.d/phpmyadmin.inc
-	fi
 
 	# Overwrite old files
 	cp -rf phpMyAdmin-$pma_v-all-languages/* /usr/share/phpmyadmin
@@ -1959,10 +1871,6 @@ if [ "$postgresql" = 'yes' ]; then
 
 	ln -s /etc/phppgadmin/config.inc.php /usr/share/phppgadmin/conf/
 
-	# Configuring phpPgAdmin
-	if false; then
-		cp -f $HESTIA_INSTALL_DIR/pga/phppgadmin.conf /etc/apache2/conf.d/phppgadmin.inc
-	fi
 
 	rm phppgadmin-v$pga_v.tar.gz
 	write_config_value "DB_PGA_ALIAS" "phppgadmin"
