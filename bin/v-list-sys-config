@@ -60,6 +60,7 @@ json_list() {
 		"FTP_SYSTEM": "'$FTP_SYSTEM'",
 		"HIDE_DOCS": "'$HIDE_DOCS'",
 		"IMAP_SYSTEM": "'$IMAP_SYSTEM'",
+		"IPV6_SUPPORT": "'$IPV6_SUPPORT'",
 		"INACTIVE_SESSION_TIMEOUT": "'$INACTIVE_SESSION_TIMEOUT'",
 		"LANGUAGE": "'$LANGUAGE'",
 		"LOGIN_STYLE": "'$LOGIN_STYLE'",
@@ -96,6 +97,7 @@ json_list() {
 		"SERVER_SMTP_PORT": "'$SERVER_SMTP_PORT'",
 		"SERVER_SMTP_SECURITY": "'$SERVER_SMTP_SECURITY'",
 		"SERVER_SMTP_USER": "'$SERVER_SMTP_USER'",
+		"SERVER_IPV6": "'$SERVER_IPV6'",
 		"SMTP_RELAY": "'$SMTP_RELAY'",
 		"SMTP_RELAY_HOST": "'$SMTP_RELAY_HOST'",
 		"SMTP_RELAY_PORT": "'$SMTP_RELAY_PORT'",
@@ -129,6 +131,9 @@ shell_list() {
 	if [ -n "$WEB_SYSTEM" ]; then
 		echo "Web Server:                       $WEB_SYSTEM:$WEB_PORT ($WEB_RGROUPS)"
 		echo "SSL Support:                      $WEB_SSL:$WEB_SSL_PORT"
+		if [ -n "$IPV6_SUPPORT" ]; then
+			echo "IPv6 Support:                     $IPV6_SUPPORT"
+		fi
 	fi
 	if [ -n "$WEB_BACKEND" ]; then
 		echo "PHP Intepreter:                   $WEB_BACKEND"

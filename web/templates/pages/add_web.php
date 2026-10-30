@@ -75,6 +75,14 @@
 						</div>
 					<?php } ?>
 				<?php } ?>
+				<?php if (isset($_SESSION["IPV6_SUPPORT"]) && $_SESSION["IPV6_SUPPORT"] == "yes") { ?>
+					<div class="form-check u-mt10">
+						<input class="form-check-input" type="checkbox" name="v_ipv6" id="v_ipv6" <?php if (!empty($v_ipv6) && $v_ipv6 == "yes") echo "checked"; ?>>
+						<label for="v_ipv6">
+							<?= tohtml( _("Enable dual-stack IPv4 & IPv6 support")) ?>
+						</label>
+					</div>
+				<?php } ?>
 			<?php } ?>
 		</div>
 

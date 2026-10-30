@@ -6,6 +6,7 @@
 
 server {
 	listen      %ip%:%proxy_ssl_port% ssl;
+	listen      %ip%:%proxy_ssl_port% quic;
 	server_name %domain_idn% %alias_idn%;
 	error_log   /var/log/%web_system%/domains/%domain%.error.log error;
 
@@ -18,6 +19,12 @@ server {
 	# TLS 1.3 0-RTT anti-replay
 	if ($anti_replay = 307) { return 307 https://$host$request_uri; }
 	if ($anti_replay = 425) { return 425; }
+
+	# HTTP/2 & HTTP/3 QUIC support
+	http2 on;
+	http3 on;
+	quic_retry on;
+	add_header Alt-Svc 'h3=":443"; ma=86400';
 
 	include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
 

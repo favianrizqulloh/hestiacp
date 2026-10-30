@@ -35,13 +35,18 @@ Project infrastructure is partly provided by [infrahost](https://infrahost.ch/en
 
 ## Features and Services
 
-- Apache2 and NGINX with PHP-FPM
+- High-performance standalone NGINX with PHP-FPM
+- Native QUIC & HTTP/3 support enabled by default across all web domains
+- Full dual-stack IPv4 & IPv6 support with auto-detection and seamless service integration
+- Default catch-all server block (`return 444;`) with 100-year self-signed SSL to drop direct IP scanning and unmatched hostnames
+- TLS security hardening out-of-the-box (TLSv1.2 & TLSv1.3, modern ECDH curve, AEAD ciphers)
 - Multiple PHP versions (5.6 - 8.5, 8.5 as default)
 - DNS Server (Bind) with clustering capabilities
 - POP/IMAP/SMTP mail services with Anti-Virus, Anti-Spam, and Webmail (ClamAV, SpamAssassin, Sieve, Roundcube)
 - MariaDB/MySQL and/or PostgreSQL databases
 - Let's Encrypt SSL support with wildcard certificates
-- Firewall with brute-force attack detection and IP lists (iptables, fail2ban, and ipset).
+- Dual-stack firewall with brute-force attack detection and IP lists (`iptables`, `ip6tables`, fail2ban, and ipset)
+- Web-based File Manager (FileGator) fully patched and compatible with Debian 13 (Trixie) and OpenSSH 9.8+ (2048-bit SFTP key support)
 
 ## Supported platforms and operating systems
 
@@ -100,6 +105,73 @@ bash hst-install.sh -h
 ```
 
 Alternatively, You can use <https://hestiacp.com/install.html> which allows you to easily generate the installation command via GUI.
+
+### Key Architectural Notes
+
+- **Pure NGINX Standalone**: Web traffic is served directly through NGINX and PHP-FPM for maximum performance and lower memory footprint. Apache2 is completely eliminated.
+- **QUIC & HTTP/3 by Default**: All SSL-enabled web domains come pre-configured out-of-the-box with HTTP/3 / QUIC listeners on UDP port 443 and modern TLS 1.2/1.3 hardening.
+- **Dual-Stack IPv4 & IPv6 Setup**: During installation, if a public Global Unicast IPv6 address (`2000::/3`) is detected on the machine, the installer will automatically offer to enable dual-stack support. Enabling it activates IPv6 bindings across Web (NGINX), DNS (Bind9 with automatic `AAAA` records), Mail (Exim4 & Dovecot), and the Dual-Stack Firewall (`iptables` + `ip6tables`).
+- **Clean Domain Aliases**: Adding a new web domain will not append a `www.` alias automatically. The `www` alias is purely optional if specified in the Aliases field.
+- **Default Catch-All Block (`return 444;`)**: Unmatched direct IP requests or unassigned hostnames are immediately dropped with HTTP status 444 using a dedicated 100-year self-signed certificate, shielding your server from automated scanners and scrapers.
+- **Debian 13 (Trixie) Ready**: File Manager (FileGator) and SFTP subsystems are fully optimized for Debian 13 with 2048-bit RSA keys and modern OpenSSH 9.8+ cryptographic algorithms.
+
+## Building and Installing from this Repository (Custom Build)
+
+This repository contains customized architectural enhancements (NGINX-only, QUIC HTTP/3, dual-stack IPv4/IPv6, and Debian 13 optimizations). You can compile and deploy directly from this source code.
+
+### Prerequisites for Building
+Ensure basic build tools and git are installed:
+```bash
+apt-get update && apt-get install -y git build-essential dpkg-dev wget ca-certificates
+```
+
+### Method 1: Fresh Installation on a New Server (Recommended)
+To deploy this custom version on a fresh server:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/<your-username>/hestiacp.git /tmp/hestiacp
+   ```
+
+2. **Compile the Hestia core package from local source:**
+   ```bash
+   cd /tmp/hestiacp/src
+   ./hst_autocompile.sh --hestia --noinstall --keepbuild '~localsrc'
+   ```
+   *The compiled `.deb` package will be saved in `/tmp/hestiacp-src/deb/`.*
+
+3. **Run the installer with the custom package:**
+   ```bash
+   cd /tmp/hestiacp/install
+   bash hst-install-debian.sh --with-debs /tmp/hestiacp-src/deb
+   ```
+   *The installer will configure standard system dependencies from official repositories, but will use your custom compiled package for Hestia Control Panel.*
+
+### Method 2: In-Place Upgrade on an Existing HestiaCP Server
+To upgrade or test your custom changes on an existing HestiaCP server:
+
+```bash
+git clone https://github.com/<your-username>/hestiacp.git /tmp/hestiacp
+cd /tmp/hestiacp/src
+./hst_autocompile.sh --hestia --install '~localsrc'
+```
+After upgrading, rebuild configurations to apply template changes:
+```bash
+v-rebuild-web-domains admin
+v-update-firewall
+```
+
+### Method 3: Compile All Packages (Including NGINX & PHP Backends)
+If you also need to build custom `hestia-nginx`, `hestia-php`, and `hestia-web-terminal` backend engines:
+```bash
+cd /tmp/hestiacp/src
+./hst_autocompile.sh --all --noinstall --keepbuild '~localsrc'
+```
+Then install using:
+```bash
+cd /tmp/hestiacp/install
+bash hst-install-debian.sh --with-debs /tmp/hestiacp-src/deb
+```
 
 ## How to upgrade an existing installation
 

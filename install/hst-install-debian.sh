@@ -69,10 +69,10 @@ mariadb_v="11.8"
 node_v="24"
 
 # Defining software pack for all distros
-software="acl apache2 apache2-suexec-custom apache2-utils at awstats bc bind9 bsdmainutils bsdutils
+software="acl at awstats bc bind9 bsdmainutils bsdutils
   clamav-daemon cron curl dnsutils dovecot-imapd dovecot-managesieved dovecot-pop3d dovecot-sieve e2fslibs e2fsprogs
   exim4 exim4-daemon-heavy expect fail2ban flex ftp git hestia=${HESTIA_INSTALL_BUILD} hestia-nginx hestia-php hestia-web-terminal
-  idn2 imagemagick ipset jq libapache2-mod-fcgid libapache2-mod-php$fpm_v libapache2-mpm-itk libmail-dkim-perl lsb-release
+  idn2 imagemagick ipset jq libmail-dkim-perl lsb-release
   lsof mariadb-client mariadb-common mariadb-server mc mysql-client mysql-common mysql-server net-tools nginx nodejs openssh-server
   php$fpm_v php$fpm_v-apcu php$fpm_v-bz2 php$fpm_v-cgi php$fpm_v-cli php$fpm_v-common php$fpm_v-curl php$fpm_v-gd
   php$fpm_v-imagick php$fpm_v-imap php$fpm_v-intl php$fpm_v-ldap php$fpm_v-mbstring php$fpm_v-mysql
@@ -84,7 +84,7 @@ installer_dependencies="apt-transport-https ca-certificates curl dirmngr gnupg o
 # Defining help function
 help() {
 	echo "Usage: $0 [OPTIONS]
-  -a, --apache            Install Apache        [yes|no]  default: yes
+
   -w, --phpfpm            Install PHP-FPM       [yes|no]  default: yes
   -o, --multiphp          Install MultiPHP      [yes|no]  default: no
   -v, --vsftpd            Install VSFTPD        [yes|no]  default: yes
@@ -267,7 +267,7 @@ tmpfile=$(mktemp -p /tmp)
 for arg; do
 	delim=""
 	case "$arg" in
-		--apache) args="${args}-a " ;;
+
 		--phpfpm) args="${args}-w " ;;
 		--vsftpd) args="${args}-v " ;;
 		--proftpd) args="${args}-j " ;;
@@ -310,7 +310,7 @@ eval set -- "$args"
 # Parsing arguments
 while getopts "a:w:v:j:k:m:M:g:d:x:z:Z:c:t:i:b:r:o:q:L:l:y:s:u:e:p:W:D:fh" Option; do
 	case $Option in
-		a) apache=$OPTARG ;;        # Apache
+
 		w) phpfpm=$OPTARG ;;        # PHP-FPM
 		o) multiphp=$OPTARG ;;      # Multi-PHP
 		v) vsftpd=$OPTARG ;;        # Vsftpd
@@ -383,7 +383,7 @@ fi
 
 # Defining default software stack
 set_default_value 'nginx' 'yes'
-set_default_value 'apache' 'yes'
+apache='no'
 set_default_value 'phpfpm' 'yes'
 set_default_value 'multiphp' 'no'
 set_default_value 'vsftpd' 'yes'
@@ -646,9 +646,9 @@ clear
 install_welcome_message
 
 # Web stack
-echo '   - NGINX Web / Proxy Server'
-if [ "$apache" = 'yes' ]; then
-	echo '   - Apache Web Server (as backend)'
+echo '   - NGINX Web Server (Standalone)'
+if false; then
+
 fi
 if [ "$phpfpm" = 'yes' ] && [ "$multiphp" = 'no' ]; then
 	echo '   - PHP-FPM Application Server'
@@ -871,9 +871,9 @@ echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/sury-keyring.gpg] https://pa
 curl -s https://packages.sury.org/php/apt.gpg | gpg --dearmor | tee /usr/share/keyrings/sury-keyring.gpg > /dev/null 2>&1
 
 # Installing sury Apache2 repo
-if [ "$apache" = 'yes' ]; then
+if false; then
 	echo "[ * ] Apache2"
-	echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/apache2-keyring.gpg] https://packages.sury.org/apache2/ $codename main" > $apt/apache2.list
+
 	curl -s https://packages.sury.org/apache2/apt.gpg | gpg --dearmor | tee /usr/share/keyrings/apache2-keyring.gpg > /dev/null 2>&1
 fi
 
@@ -950,7 +950,7 @@ check_result $? 'apt-get upgrade failed'
 # Creating backup directory tree
 mkdir -p $hst_backups
 cd $hst_backups
-mkdir nginx apache2 php vsftpd proftpd bind exim4 dovecot clamd
+mkdir nginx php vsftpd proftpd bind exim4 dovecot clamd
 mkdir spamassassin mysql postgresql openssl hestia
 
 # Backup OpenSSL configuration
@@ -960,10 +960,10 @@ cp /etc/ssl/openssl.cnf $hst_backups/openssl > /dev/null 2>&1
 systemctl stop nginx > /dev/null 2>&1
 cp -r /etc/nginx/* $hst_backups/nginx > /dev/null 2>&1
 
-# Backup Apache configuration
-systemctl stop apache2 > /dev/null 2>&1
-cp -r /etc/apache2/* $hst_backups/apache2 > /dev/null 2>&1
-rm -f /etc/apache2/conf.d/* > /dev/null 2>&1
+# Apache removed (NGINX standalone)
+
+
+
 
 # Backup PHP-FPM configuration
 systemctl stop php*-fpm > /dev/null 2>&1
@@ -1332,8 +1332,19 @@ chmod 660 $HESTIA/conf/hestia.conf
 write_config_value "BACKEND_PORT" "8083"
 
 # Web stack
-if [ "$apache" = 'yes' ]; then
-	write_config_value "WEB_SYSTEM" "apache2"
+if false; then
+	write_config_value "WEB_SYSTEM" "nginx"
+	write_config_value "WEB_PORT" "80"
+	write_config_value "WEB_SSL_PORT" "443"
+	write_config_value "WEB_SSL" "openssl"
+	write_config_value "PROXY_SYSTEM" ""
+	write_config_value "PROXY_PORT" ""
+	write_config_value "PROXY_SSL_PORT" ""
+	write_config_value "PROXY_SYSTEM" ""
+	write_config_value "PROXY_PORT" ""
+	write_config_value "PROXY_SSL_PORT" ""
+	write_config_value "WEB_BACKEND" "php-fpm"
+	write_config_value "STATS_SYSTEM" "awstats"
 	write_config_value "WEB_RGROUPS" "www-data"
 	write_config_value "WEB_PORT" "8080"
 	write_config_value "WEB_SSL_PORT" "8443"
@@ -1348,6 +1359,9 @@ if [ "$apache" = 'no' ]; then
 	write_config_value "WEB_PORT" "80"
 	write_config_value "WEB_SSL_PORT" "443"
 	write_config_value "WEB_SSL" "openssl"
+	write_config_value "PROXY_SYSTEM" ""
+	write_config_value "PROXY_PORT" ""
+	write_config_value "PROXY_SSL_PORT" ""
 	write_config_value "STATS_SYSTEM" "awstats"
 fi
 if [ "$phpfpm" = 'yes' ]; then
@@ -1574,6 +1588,15 @@ $HESTIA/bin/v-change-sys-config-value 'POLICY_SYSTEM_PROTECTED_ADMIN' 'yes'
 echo "[ * ] Configuring NGINX..."
 rm -f /etc/nginx/conf.d/*.conf
 cp -f $HESTIA_INSTALL_DIR/nginx/nginx.conf /etc/nginx/
+
+# Generate 100-year default self-signed SSL certificate for catch-all block
+mkdir -p /etc/nginx/ssl/default
+openssl req -x509 -newkey rsa:4096 -days 36500 -keyout /etc/nginx/ssl/default/privkey.pem -out /etc/nginx/ssl/default/cert.pem -subj "/CN=default" -nodes > /dev/null 2>&1
+
+# Adjust IPv6 listener in catch-all if IPv6 is disabled in kernel
+if [ ! -f /proc/net/if_inet6 ] || [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" = "1" ]; then
+	sed -i '/listen \[::\]/d' /etc/nginx/nginx.conf
+fi
 cp -f $HESTIA_INSTALL_DIR/nginx/status.conf /etc/nginx/conf.d/
 cp -f $HESTIA_INSTALL_DIR/nginx/0rtt-anti-replay.conf /etc/nginx/conf.d/
 cp -f $HESTIA_INSTALL_DIR/nginx/agents.conf /etc/nginx/conf.d/
@@ -1631,7 +1654,7 @@ check_result $? "nginx start failed"
 #                    Configure Apache                      #
 #----------------------------------------------------------#
 
-if [ "$apache" = 'yes' ]; then
+if false; then
 	echo "[ * ] Configuring Apache Web Server..."
 
 	mkdir -p /etc/apache2/conf.d
@@ -1681,7 +1704,7 @@ if [ "$apache" = 'yes' ]; then
 	check_result $? "apache2 start failed"
 else
 	update-rc.d apache2 disable > /dev/null 2>&1
-	systemctl stop apache2 > /dev/null 2>&1
+	
 fi
 
 #----------------------------------------------------------#
@@ -1875,7 +1898,7 @@ if [ "$mysql" = 'yes' ] || [ "$mysql8" = 'yes' ]; then
 	mkdir /usr/share/phpmyadmin/tmp
 
 	# Configuring Apache2 for PHPMYADMIN
-	if [ "$apache" = 'yes' ]; then
+	if false; then
 		touch /etc/apache2/conf.d/phpmyadmin.inc
 	fi
 
@@ -1937,7 +1960,7 @@ if [ "$postgresql" = 'yes' ]; then
 	ln -s /etc/phppgadmin/config.inc.php /usr/share/phppgadmin/conf/
 
 	# Configuring phpPgAdmin
-	if [ "$apache" = 'yes' ]; then
+	if false; then
 		cp -f $HESTIA_INSTALL_DIR/pga/phppgadmin.conf /etc/apache2/conf.d/phppgadmin.inc
 	fi
 
@@ -2317,7 +2340,12 @@ fi
 echo "[ * ] Configuring File Manager..."
 $HESTIA/bin/v-add-sys-filemanager quiet
 if [[ $release -ge 13 ]]; then
-	echo 'KexAlgorithms +diffie-hellman-group-exchange-sha256' > /etc/ssh/sshd_config.d/hestia-kex.conf
+	cat << 'EOF' > /etc/ssh/sshd_config.d/hestia-sftp.conf
+KexAlgorithms +diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256
+PubkeyAcceptedKeyTypes +ssh-rsa
+HostKeyAlgorithms +ssh-rsa
+EOF
+	systemctl restart ssh
 fi
 
 #----------------------------------------------------------#
@@ -2344,7 +2372,34 @@ default_nic="$(ip -d -j route show | jq -r '.[] | if .dst == "default" then .dev
 # IPv4
 primary_ipv4="$(ip -4 -d -j addr show "$default_nic" | jq -r '.[] | select(length > 0) | .addr_info[] | if .scope == "global" then .local else empty end' | head -n1)"
 # IPv6
-#primary_ipv6="$(ip -6 -d -j addr show "$default_nic" | jq -r '.[] | select(length > 0) | .addr_info[] | if .scope == "global" then .local else empty end' | head -n1)"
+primary_ipv6="$(ip -6 -d -j addr show "$default_nic" 2>/dev/null | jq -r '.[] | select(length > 0) | .addr_info[] | select(.scope == "global") | .local' 2>/dev/null | grep -E '^[23]' | head -n1)"
+if [ -z "$primary_ipv6" ]; then
+	primary_ipv6="$(ip -6 addr show scope global 2>/dev/null | grep inet6 | awk '{print $2}' | cut -d/ -f1 | grep -E '^[23]' | head -n1)"
+fi
+enable_ipv6="no"
+if [ -n "$primary_ipv6" ]; then
+	if [ "$interactive" = "yes" ]; then
+		echo
+		read -r -p "IPv6 is detected on this machine, would you like to enable dual-stack IPv4 & IPv6 setup? [y/n] " ipv6_choice
+		case "$ipv6_choice" in
+			[yY][eE][sS]|[yY]) enable_ipv6="yes" ;;
+			*) enable_ipv6="no" ;;
+		esac
+	else
+		enable_ipv6="yes"
+	fi
+fi
+
+if [ "$enable_ipv6" = "yes" ]; then
+	echo "[ * ] Enabling full dual-stack IPv4 & IPv6 configuration..."
+	write_config_value "IPV6_SUPPORT" "yes"
+	write_config_value "SERVER_IPV6" "$primary_ipv6"
+	# Configure Exim for IPv6
+	sed -i 's/disable_ipv6 = true/disable_ipv6 = false/g' /etc/exim4/exim4.conf.template 2>/dev/null
+	sed -i 's/hostlist relay_from_hosts = 127.0.0.1/hostlist relay_from_hosts = 127.0.0.1 : ::::1/g' /etc/exim4/exim4.conf.template 2>/dev/null
+else
+	write_config_value "IPV6_SUPPORT" "no"
+fi
 ip="$primary_ipv4"
 local_ip="$primary_ipv4"
 

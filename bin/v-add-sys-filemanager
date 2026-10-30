@@ -152,15 +152,14 @@ chown hestiaweb: "${FM_INSTALL_DIR}/repository"
 
 # Apply SSH config if running on Debian 13
 source /etc/os-release
-if [[ "$ID" == "debian" && "$VERSION_ID" == "13" ]]; then
-	_KEX_CONF="/etc/ssh/sshd_config.d/hestia-kex.conf"
-	_KEX_LINE="KexAlgorithms +diffie-hellman-group-exchange-sha256"
-
-	# Only create/modify the file if it doesn't already contain the correct config
-	if [[ ! -f "$_KEX_CONF" ]] || ! grep -qxF "$_KEX_LINE" "$_KEX_CONF"; then
-		echo "$_KEX_LINE" > "$_KEX_CONF"
-		"$BIN/v-restart-service" ssh
-	fi
+if [[ "$ID" == "debian" && "$VERSION_ID" -ge 13 ]]; then
+	_SFTP_CONF="/etc/ssh/sshd_config.d/hestia-sftp.conf"
+	cat << 'EOF' > "$_SFTP_CONF"
+KexAlgorithms +diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256
+PubkeyAcceptedKeyTypes +ssh-rsa
+HostKeyAlgorithms +ssh-rsa
+EOF
+	"$BIN/v-restart-service" ssh
 fi
 
 #----------------------------------------------------------#

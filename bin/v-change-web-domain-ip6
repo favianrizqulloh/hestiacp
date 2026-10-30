@@ -1,0 +1,77 @@
+#!/bin/bash
+# info: change web domain ipv6 address
+# options: USER DOMAIN IP6 [RESTART]
+#
+# example: v-change-web-domain-ip6 admin example.com 2001:db8::1 yes
+#
+# This function is used for changing or enabling/disabling domain IPv6 address
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+domain=$2
+domain_idn=$2
+ip6=$3
+restart=$4
+
+# Includes
+# shellcheck source=/etc/hestiacp/hestia.conf
+source /etc/hestiacp/hestia.conf
+# shellcheck source=/usr/local/hestia/func/main.sh
+source $HESTIA/func/main.sh
+# shellcheck source=/usr/local/hestia/func/domain.sh
+source $HESTIA/func/domain.sh
+# shellcheck source=/usr/local/hestia/func/ip.sh
+source $HESTIA/func/ip.sh
+# shellcheck source=/usr/local/hestia/func/rebuild.sh
+source $HESTIA/func/rebuild.sh
+# load config file
+source_conf "$HESTIA/conf/hestia.conf"
+
+# Additional argument formatting
+format_domain
+format_domain_idn
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '3' "$#" 'USER DOMAIN IP6 [RESTART]'
+is_format_valid 'user' 'domain' 'restart'
+is_system_enabled "$WEB_SYSTEM" 'WEB_SYSTEM'
+is_object_valid 'user' 'USER' "$user"
+is_object_unsuspended 'user' 'USER' "$user"
+is_object_valid 'web' 'DOMAIN' "$domain"
+is_object_unsuspended 'web' 'DOMAIN' "$domain"
+
+# Normalize empty or "none" / "no" / "off"
+if [ "$ip6" = "none" ] || [ "$ip6" = "no" ] || [ "$ip6" = "off" ]; then
+	ip6=''
+elif [ "$ip6" = "yes" ] || [ "$ip6" = "default" ]; then
+	if [ -n "$SERVER_IPV6" ]; then
+		ip6="$SERVER_IPV6"
+	fi
+fi
+
+# Perform verification if read-only mode is enabled
+check_hestia_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Update web.conf
+update_object_value 'web' 'DOMAIN' "$domain" '$IP6' "$ip6"
+
+# Rebuild domain configuration
+$BIN/v-rebuild-web-domain "$user" "$domain" "$restart"
+check_result $? "WEB rebuild failed" > /dev/null
+
+# Logging
+$BIN/v-log-action "$user" "Info" "Web" "Web domain IPv6 changed (IP6: $ip6, Domain: $domain)."
+log_event "$OK" "$ARGUMENTS"
+
+exit 0

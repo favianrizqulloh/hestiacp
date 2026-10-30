@@ -21,6 +21,10 @@ source $HESTIA/func/main.sh
 # load config file
 source_conf "$HESTIA/conf/hestia.conf"
 
+if [ "$WEB_SYSTEM" != "apache2" ]; then
+	exit 0
+fi
+
 #----------------------------------------------------------#
 #                       Action                             #
 #----------------------------------------------------------#

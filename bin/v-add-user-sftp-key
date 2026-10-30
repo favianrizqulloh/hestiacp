@@ -44,9 +44,20 @@ SSH_DIR="$HOMEDIR/$user/.ssh"
 [ -z "$(readlink -f "$PUBKEY_FILE" | egrep "^$HOMEDIR/$user/.ssh/")" ] && check_result "$E_FORBIDEN" "Invalid public key file path"
 [ -z "$(readlink -f "$AUTHKEY_FILE" | egrep "^$HOMEDIR/$user/.ssh/")" ] && check_result "$E_FORBIDEN" "Invalid authorized keys path"
 
+regenerate_key=false
 if [ ! -f "${PRVKEY_FILE}" ]; then
-	ssh-keygen -q -b 1024 -t rsa -f "${PRVKEY_FILE}" -N ""
-	rm "${PUBKEY_FILE}"
+	regenerate_key=true
+else
+	key_bits=$(ssh-keygen -l -f "${PRVKEY_FILE}" 2>/dev/null | awk '{print $1}')
+	if [ -n "$key_bits" ] && [ "$key_bits" -lt 2048 ]; then
+		regenerate_key=true
+	fi
+fi
+
+if [ "$regenerate_key" = true ]; then
+	rm -f "${PRVKEY_FILE}" "${PUBKEY_FILE}"
+	ssh-keygen -q -b 2048 -t rsa -f "${PRVKEY_FILE}" -N ""
+	rm -f "${PUBKEY_FILE}"
 	new_privkey=true
 fi
 
@@ -66,10 +77,12 @@ if [ ! -f "${AUTHKEY_FILE}" ] || [ "$new_privkey" = true ]; then
 		expire=$(date +%s -d "+${ttl} min")
 		echo "rm ${PRVKEY_FILE}" | at "now +${ttl} minute" > /dev/null 2>&1
 	fi
-	echo "from=\"127.0.0.1\",command=\"internal-sftp\",restrict ${pubkey_str} TS:${expire} ${pubkey_desc}" >> "${AUTHKEY_FILE}"
+	echo "from=\"127.0.0.1,::1\",command=\"internal-sftp\",restrict ${pubkey_str} TS:${expire} ${pubkey_desc}" >> "${AUTHKEY_FILE}"
 fi
 
 #
+chmod 600 "${PRVKEY_FILE}"
+chmod 600 "${AUTHKEY_FILE}"
 chown ${user}: "${AUTHKEY_FILE}"
 chown "hestiaweb": "${PRVKEY_FILE}"
 

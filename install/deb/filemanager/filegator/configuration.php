@@ -216,7 +216,8 @@ $dist_config["services"]["Filegator\Services\Storage\Filesystem"]["config"][
 		}
 	}
 	# Create filemanager sftp key if missing and trash it after 30 min
-	if (!file_exists("/home/" . basename($v_user) . "/.ssh/hst-filemanager-key")) {
+	$hst_sftp_key = "/home/" . basename($v_user) . "/.ssh/hst-filemanager-key";
+	if (!file_exists($hst_sftp_key) || (file_exists($hst_sftp_key) && filesize($hst_sftp_key) < 1600)) {
 		exec(
 			"sudo /usr/local/hestia/bin/v-add-user-sftp-key " .
 				quoteshellarg(basename($v_user)) .
@@ -224,6 +225,7 @@ $dist_config["services"]["Filegator\Services\Storage\Filesystem"]["config"][
 			$output,
 			$return_var,
 		);
+		clearstatcache(true, $hst_sftp_key);
 	}
 
 	if (!isset($_SESSION["SFTP_PORT"])) {
@@ -246,7 +248,7 @@ $dist_config["services"]["Filegator\Services\Storage\Filesystem"]["config"][
 		"host" => "127.0.0.1",
 		"port" => intval($_SESSION["SFTP_PORT"]),
 		"username" => basename($v_user),
-		"privateKey" => "/home/" . basename($v_user) . "/.ssh/hst-filemanager-key",
+		"privateKey" => $hst_sftp_key,
 		"root" => $root,
 		"timeout" => 10,
 		"directoryPerm" => 0755,

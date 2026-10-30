@@ -39,6 +39,8 @@ unset($output);
 
 // Parse domain
 $v_ip = trim($data[$v_domain]["IP"]);
+$v_ip6 = trim($data[$v_domain]["IP6"] ?? "");
+$v_ipv6 = (!empty($v_ip6) && $v_ip6 !== "no") ? "yes" : "no";
 $v_template = $data[$v_domain]["TPL"];
 $v_aliases = str_replace(",", "\n", $data[$v_domain]["ALIAS"]);
 $valiases = explode(",", $data[$v_domain]["ALIAS"]);
@@ -307,6 +309,89 @@ if (!empty($_POST["save"]) && $read_only !== true) {
 			check_return_code($return_var, $output);
 			unset($output);
 			$restart_email = "yes";
+		}
+	}
+
+	// Change web domain IPv6 dual-stack
+	$v_new_ipv6 = (!empty($_POST["v_ipv6"]) && $_POST["v_ipv6"] == "on") ? "yes" : "no";
+	if ($v_new_ipv6 !== $v_ipv6 && empty($_SESSION["error_msg"])) {
+		$v_target_ip6 = ($v_new_ipv6 == "yes") ? (!empty($_SESSION["SERVER_IPV6"]) ? $_SESSION["SERVER_IPV6"] : "yes") : "";
+		exec(
+			HESTIA_CMD .
+				"v-change-web-domain-ip6 " .
+				$user .
+				" " .
+				quoteshellarg($v_domain) .
+				" " .
+				quoteshellarg($v_target_ip6) .
+				" 'no'",
+			$output,
+			$return_var,
+		);
+		check_return_code($return_var, $output);
+		$restart_web = "yes";
+		$restart_proxy = "yes";
+		unset($output);
+
+		// Synchronize DNS AAAA record if DNS zone exists
+		if (empty($_SESSION["error_msg"])) {
+			exec(
+				HESTIA_CMD . "v-list-dns-domain " . $user . " " . quoteshellarg($v_domain) . " json",
+				$output,
+				$return_var,
+			);
+			unset($output);
+			if ($return_var == 0) {
+				if ($v_new_ipv6 == "yes") {
+					$dns_ip6_val = !empty($_SESSION["SERVER_IPV6"]) ? $_SESSION["SERVER_IPV6"] : "";
+					if (!empty($dns_ip6_val)) {
+						exec(
+							HESTIA_CMD . "v-list-dns-records " . $user . " " . quoteshellarg($v_domain) . " json",
+							$dns_records_out,
+							$dns_return_var,
+						);
+						$dns_recs = json_decode(implode("", $dns_records_out), true);
+						unset($dns_records_out);
+						$has_aaaa = false;
+						if (is_array($dns_recs)) {
+							foreach ($dns_recs as $rec_id => $rec_data) {
+								if (($rec_data["RECORD"] ?? "") === "@" && ($rec_data["TYPE"] ?? "") === "AAAA") {
+									$has_aaaa = true;
+									break;
+								}
+							}
+						}
+						if (!$has_aaaa) {
+							exec(
+								HESTIA_CMD . "v-add-dns-record " . $user . " " . quoteshellarg($v_domain) . " '@' 'AAAA' " . quoteshellarg($dns_ip6_val) . " '' 'no'",
+								$output,
+								$return_var,
+							);
+							unset($output);
+						}
+					}
+				} else {
+					exec(
+						HESTIA_CMD . "v-list-dns-records " . $user . " " . quoteshellarg($v_domain) . " json",
+						$dns_records_out,
+						$dns_return_var,
+					);
+					$dns_recs = json_decode(implode("", $dns_records_out), true);
+					unset($dns_records_out);
+					if (is_array($dns_recs)) {
+						foreach ($dns_recs as $rec_id => $rec_data) {
+							if (($rec_data["RECORD"] ?? "") === "@" && ($rec_data["TYPE"] ?? "") === "AAAA") {
+								exec(
+									HESTIA_CMD . "v-delete-dns-record " . $user . " " . quoteshellarg($v_domain) . " " . quoteshellarg($rec_id) . " 'no'",
+									$output,
+									$return_var,
+								);
+								unset($output);
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1728,6 +1813,10 @@ if (isset($v_ftp_users_updated)) {
 			"v_ftp_pre_path" => $v_ftp_user_prepath,
 		];
 	}
+}
+
+if (!empty($_POST)) {
+	$v_ipv6 = (!empty($_POST["v_ipv6"]) && $_POST["v_ipv6"] == "on") ? "yes" : "no";
 }
 
 // Render page

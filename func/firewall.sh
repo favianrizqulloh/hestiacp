@@ -7,7 +7,7 @@
 #===========================================================================#
 
 heal_iptables_links() {
-	packages="iptables iptables-save iptables-restore"
+	packages="iptables iptables-save iptables-restore ip6tables ip6tables-save ip6tables-restore"
 	for package in $packages; do
 		if [ ! -e "/sbin/${package}" ]; then
 			if which ${package}; then

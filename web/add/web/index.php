@@ -78,7 +78,10 @@ if (!empty($_POST["ok"]) && $read_only !== true) {
 				quoteshellarg($v_domain) .
 				" " .
 				$v_ip .
-				" 'yes'",
+				" 'yes' " .
+				(!empty($_POST["v_aliases"]) ? quoteshellarg($_POST["v_aliases"]) : "'none'") .
+				" '' " .
+				quoteshellarg((!empty($_POST["v_ipv6"]) && $_POST["v_ipv6"] == "on") ? (!empty($_SESSION["SERVER_IPV6"]) ? $_SESSION["SERVER_IPV6"] : "yes") : "no"),
 			$output,
 			$return_var,
 		);
@@ -181,6 +184,7 @@ unset($output);
 $accept = $_GET["accept"] ?? "";
 
 $v_domain = $_POST["domain"] ?? "";
+$v_ipv6 = isset($_POST["v_ipv6"]) ? ($_POST["v_ipv6"] === "on" ? "yes" : "no") : ((!empty($_SESSION["IPV6_SUPPORT"]) && $_SESSION["IPV6_SUPPORT"] === "yes") ? "yes" : "no");
 
 // Render page
 render_page($user, $TAB, "add_web");
