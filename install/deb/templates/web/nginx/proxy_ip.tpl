@@ -8,7 +8,7 @@ server {
 
 server {
 	listen %ip%:%proxy_ssl_port% default_server ssl;
-	listen %ip%:%proxy_ssl_port% quic;
+	listen %ip%:%proxy_ssl_port% quic reuseport default_server;
 	server_name _;
 	access_log off;
 	error_log /dev/null;
