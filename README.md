@@ -109,10 +109,12 @@ Alternatively, You can use <https://hestiacp.com/install.html> which allows you 
 ### Key Architectural Notes
 
 - **Pure NGINX Standalone**: Web traffic is served directly through NGINX and PHP-FPM for maximum performance and lower memory footprint. Apache2 is completely eliminated.
-- **QUIC & HTTP/3 by Default**: All SSL-enabled web domains come pre-configured out-of-the-box with HTTP/3 / QUIC listeners on UDP port 443 and modern TLS 1.2/1.3 hardening.
+- **QUIC & HTTP/3 by Default**: All SSL-enabled web domains come pre-configured out-of-the-box with HTTP/3 / QUIC listeners on UDP port 443 and modern TLS 1.2/1.3 hardening (`quic_retry on;`, `add_header Alt-Svc 'h3=":443"; ma=86400' always;`).
 - **Dual-Stack IPv4 & IPv6 Setup**: During installation, if a public Global Unicast IPv6 address (`2000::/3`) is detected on the machine, the installer will automatically offer to enable dual-stack support. Enabling it activates IPv6 bindings across Web (NGINX), DNS (Bind9 with automatic `AAAA` records), Mail (Exim4 & Dovecot), and the Dual-Stack Firewall (`iptables` + `ip6tables`).
 - **Clean Domain Aliases**: Adding a new web domain will not append a `www.` alias automatically. The `www` alias is purely optional if specified in the Aliases field.
-- **Default Catch-All Block (`return 444;`)**: Unmatched direct IP requests or unassigned hostnames are immediately dropped with HTTP status 444 using a dedicated 100-year self-signed certificate, shielding your server from automated scanners and scrapers.
+- **Dual-Stack Catch-All Block (`return 444;`)**: Unmatched direct IP requests or unassigned hostnames over both IPv4 and IPv6 are immediately dropped with HTTP status 444 (TCP reset / stream close) using dedicated certificates, shielding your server from automated scanners and preventing IP/domain bleed. The IPv6 catch-all is isolated in `/etc/nginx/conf.d/00-default-ip6.conf`, ensuring multi-IPv4 setups never encounter duplicate default server conflicts.
+- **Dual-Stack Firewall (`iptables` + `ip6tables`)**: Complete firewall synchronization with automatic lowercase protocol handling (`-p tcp`, `-p udp`, `-p ipv6-icmp`), explicit UDP 443 HTTP/3 rule placed above WEB, and native Neighbor Discovery protection.
+- **Control Panel SSL & HSTS Ready**: Secure panel access via `v-add-letsencrypt-host` to automatically issue trusted Let's Encrypt certificates for the control panel hostname on port 8083, eliminating browser HSTS blocks.
 - **Debian 13 (Trixie) Ready**: File Manager (FileGator) and SFTP subsystems are fully optimized for Debian 13 with 2048-bit RSA keys and modern OpenSSH 9.8+ cryptographic algorithms.
 
 ## Building and Installing from this Repository (Custom Build)
@@ -130,7 +132,7 @@ To deploy this custom version on a fresh server:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/<your-username>/hestiacp.git /tmp/hestiacp
+   git clone https://github.com/favianrizqulloh/hestiacp.git /tmp/hestiacp
    ```
 
 2. **Compile the Hestia core package from local source:**
@@ -147,11 +149,16 @@ To deploy this custom version on a fresh server:
    ```
    *The installer will configure standard system dependencies from official repositories, but will use your custom compiled package for Hestia Control Panel.*
 
+4. **Issue Let's Encrypt Certificate for Control Panel (Port 8083):**
+   ```bash
+   v-add-letsencrypt-host
+   ```
+
 ### Method 2: In-Place Upgrade on an Existing HestiaCP Server
 To upgrade or test your custom changes on an existing HestiaCP server:
 
 ```bash
-git clone https://github.com/<your-username>/hestiacp.git /tmp/hestiacp
+git clone https://github.com/favianrizqulloh/hestiacp.git /tmp/hestiacp
 cd /tmp/hestiacp/src
 ./hst_autocompile.sh --hestia --install '~localsrc'
 ```
@@ -159,6 +166,7 @@ After upgrading, rebuild configurations to apply template changes:
 ```bash
 v-rebuild-web-domains admin
 v-update-firewall
+v-add-letsencrypt-host
 ```
 
 ### Method 3: Compile All Packages (Including NGINX & PHP Backends)
@@ -171,6 +179,7 @@ Then install using:
 ```bash
 cd /tmp/hestiacp/install
 bash hst-install-debian.sh --with-debs /tmp/hestiacp-src/deb
+v-add-letsencrypt-host
 ```
 
 ## How to upgrade an existing installation
