@@ -163,6 +163,9 @@ if [ -n "$WEB_SYSTEM" ]; then
 		fi
 		cp -f $HESTIA_INSTALL_DIR/nginx/unassigned.inc "$web_conf"
 		sed -i 's/directIP/'$ip'/g' "$web_conf"
+		if [ ! -f /proc/net/if_inet6 ] || [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" = "1" ]; then
+			sed -i '/listen.*\[::\]/d' "$web_conf"
+		fi
 		process_http2_directive "$web_conf"
 	fi
 
