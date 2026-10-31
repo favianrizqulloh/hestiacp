@@ -1,0 +1,30 @@
+---
+description: Critical guidelines and invariants for HestiaCP NGINX standalone, dual-stack IPv6, and firewall configuration.
+globs:
+  - "bin/v-*"
+  - "install/**"
+  - "func/**"
+  - "web/**"
+---
+
+# HestiaCP Dual-Stack & NGINX Standalone Development Rules
+
+When maintaining or developing features in this repository, strictly adhere to the following invariants:
+
+1. **Dual-Stack Default Server Separation**:
+   - Never place wildcard `[::]:80 default_server` or `[::]:443 default_server ssl` inside per-IP configuration templates (such as `unassigned.inc` or `/etc/nginx/conf.d/$ip.conf`).
+   - All IPv6 wildcard catch-all listeners must reside in a dedicated single file (`/etc/nginx/conf.d/00-default-ip6.conf`).
+   - Per-IP files must only bind to their specific IPv4 socket (`directIP:80 default_server`, `directIP:443 default_server ssl`).
+
+2. **Firewall Protocol Formatting**:
+   - Always convert protocols to lowercase before passing to `ip6tables` (e.g. `proto_lower="${PROTOCOL,,}"`).
+   - For ICMP on IPv6, specify `-p ipv6-icmp`.
+   - Never apply IPv4 CIDRs to `ip6tables` or IPv6 CIDRs to `iptables`.
+
+3. **HTTP/3 QUIC Reuseport Invariant**:
+   - The `reuseport` directive for QUIC (`listen ... quic reuseport`) must only appear on the default server block for a socket family.
+   - Virtual host templates and domain include generators must specify `listen ... quic;` without `reuseport`.
+
+4. **HestiaCP Upstream Merge Compatibility**:
+   - Avoid deleting existing function signatures in `bin/` or `func/`.
+   - Keep Apache execution paths safely bypassed or no-op'd rather than rewriting entire CLI scripts, preventing upstream git merge conflicts.
