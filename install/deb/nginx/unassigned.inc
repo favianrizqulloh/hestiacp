@@ -1,6 +1,5 @@
 server {
 	listen      directIP:80 default_server;
-	listen      [::]:80 default_server;
 	server_name _;
 	access_log  off;
 	error_log   /dev/null;
@@ -9,9 +8,7 @@ server {
 
 server {
 	listen              directIP:443 default_server ssl;
-	listen              [::]:443 default_server ssl;
 	listen              directIP:443 quic reuseport default_server;
-	listen              [::]:443 quic default_server;
 	server_name         _;
 	access_log          off;
 	error_log           /dev/null;

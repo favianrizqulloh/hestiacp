@@ -1616,6 +1616,15 @@ $HESTIA/bin/v-change-sys-config-value 'POLICY_SYSTEM_PROTECTED_ADMIN' 'yes'
 echo "[ * ] Configuring NGINX..."
 rm -f /etc/nginx/conf.d/*.conf
 cp -f $HESTIA_INSTALL_DIR/nginx/nginx.conf /etc/nginx/
+
+# Generate 100-year default self-signed SSL certificate for catch-all block
+mkdir -p /etc/nginx/ssl/default
+openssl req -x509 -newkey rsa:4096 -days 36500 -keyout /etc/nginx/ssl/default/privkey.pem -out /etc/nginx/ssl/default/cert.pem -subj "/CN=default" -nodes > /dev/null 2>&1
+
+# Copy default IPv6 catch-all block if IPv6 is active in kernel
+if [ -f /proc/net/if_inet6 ] && [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" != "1" ]; then
+	cp -f $HESTIA_INSTALL_DIR/nginx/00-default-ip6.conf /etc/nginx/conf.d/
+fi
 cp -f $HESTIA_INSTALL_DIR/nginx/status.conf /etc/nginx/conf.d/
 cp -f $HESTIA_INSTALL_DIR/nginx/0rtt-anti-replay.conf /etc/nginx/conf.d/
 cp -f $HESTIA_INSTALL_DIR/nginx/agents.conf /etc/nginx/conf.d/

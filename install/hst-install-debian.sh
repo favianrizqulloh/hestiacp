@@ -1560,9 +1560,9 @@ cp -f $HESTIA_INSTALL_DIR/nginx/nginx.conf /etc/nginx/
 mkdir -p /etc/nginx/ssl/default
 openssl req -x509 -newkey rsa:4096 -days 36500 -keyout /etc/nginx/ssl/default/privkey.pem -out /etc/nginx/ssl/default/cert.pem -subj "/CN=default" -nodes > /dev/null 2>&1
 
-# Adjust IPv6 listener in catch-all if IPv6 is disabled in kernel
-if [ ! -f /proc/net/if_inet6 ] || [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" = "1" ]; then
-	sed -i '/listen \[::\]/d' /etc/nginx/nginx.conf
+# Copy default IPv6 catch-all block if IPv6 is active in kernel
+if [ -f /proc/net/if_inet6 ] && [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" != "1" ]; then
+	cp -f $HESTIA_INSTALL_DIR/nginx/00-default-ip6.conf /etc/nginx/conf.d/
 fi
 cp -f $HESTIA_INSTALL_DIR/nginx/status.conf /etc/nginx/conf.d/
 cp -f $HESTIA_INSTALL_DIR/nginx/0rtt-anti-replay.conf /etc/nginx/conf.d/
