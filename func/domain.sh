@@ -310,7 +310,7 @@ add_web_config() {
 			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT ssl;|&\n\tlisten      $local_ip:$WEB_SSL_PORT quic;|g" "$conf"
 		fi
 		if ! grep -q "http3" "$conf"; then
-			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400';|g" "$conf"
+			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400' always;|g" "$conf"
 		fi
 	fi
 
@@ -1009,7 +1009,7 @@ add_webmail_config() {
 			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT ssl;|&\n\tlisten      $local_ip:$WEB_SSL_PORT quic;|g" "$conf"
 		fi
 		if ! grep -q "http3" "$conf"; then
-			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400';|g" "$conf"
+			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400' always;|g" "$conf"
 		fi
 	fi
 

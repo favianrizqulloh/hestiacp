@@ -28,7 +28,7 @@ server {
 	http2 on;
 	http3 on;
 	quic_retry on;
-	add_header Alt-Svc 'h3=":443"; ma=86400';
+	add_header Alt-Svc 'h3=":443"; ma=86400' always;
 
 	include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
 

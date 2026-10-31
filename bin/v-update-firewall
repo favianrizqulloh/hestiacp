@@ -102,6 +102,9 @@ echo "$ip6tables -F INPUT" >> "$tmp6"
 echo "$iptables -A INPUT -i lo -j ACCEPT" >> "$tmp"
 echo "$ip6tables -A INPUT -i lo -j ACCEPT" >> "$tmp6"
 echo "$ip6tables -A INPUT -p ipv6-icmp -j ACCEPT" >> "$tmp6"
+if [ -n "$SERVER_IPV6" ]; then
+	echo "$ip6tables -A INPUT -s $SERVER_IPV6 -j ACCEPT" >> "$tmp6"
+fi
 ips="$(ls $HESTIA/data/ips)"
 for ip in $ips; do
 	echo "$iptables -A INPUT -s $ip -j ACCEPT" >> "$tmp"
@@ -147,7 +150,8 @@ IFS=$'\n'
 for line in $(sort -r -n -k 2 -t \' $rules); do
 	parse_object_kv_list "$line"
 	if [ "$SUSPENDED" = 'no' ]; then
-		proto="-p $PROTOCOL"
+		proto_lower="${PROTOCOL,,}"
+		proto="-p $proto_lower"
 		port="--dport $PORT"
 		state=""
 		action="-j $ACTION"
@@ -192,7 +196,7 @@ for line in $(sort -r -n -k 2 -t \' $rules); do
 			if [ "$IP" = "0.0.0.0/0" ]; then
 				ip6_spec="-s ::/0"
 			fi
-			if [ "$PROTOCOL" = 'ICMP' ]; then
+			if [ "$proto_lower" = 'icmp' ]; then
 				proto6="-p ipv6-icmp"
 			fi
 			echo "$ip6tables -A INPUT $proto6 $port $ip6_spec $state $action" >> "$tmp6"
@@ -205,8 +209,8 @@ echo "$iptables -P INPUT DROP" >> "$tmp"
 echo "$ip6tables -P INPUT DROP" >> "$tmp6"
 
 # Adding hestia chain
-echo "$iptables -N hestia" >> "$tmp"
-echo "$ip6tables -N hestia" >> "$tmp6"
+echo "$iptables -N hestia 2>/dev/null || true" >> "$tmp"
+echo "$ip6tables -N hestia 2>/dev/null || true" >> "$tmp6"
 # Applying rules
 bash "$tmp" 2> /dev/null
 # Deleting temporary file

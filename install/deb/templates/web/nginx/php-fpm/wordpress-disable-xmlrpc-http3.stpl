@@ -25,7 +25,7 @@ server {
 	if ($anti_replay = 425) { return 425; }
 
         # Add support to HTTP/3
-        add_header Alt-Svc 'h3=":$server_port"; ma=86400';
+        add_header Alt-Svc 'h3=":$server_port"; ma=86400' always;
 
 	include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
 

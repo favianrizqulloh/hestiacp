@@ -25,15 +25,6 @@ aliases=$5
 proxy_ext=$6
 ip6=$7
 
-if [ "$ip6" = "yes" ] || [ "$ip6" = "default" ]; then
-	if [ -n "$SERVER_IPV6" ]; then
-		ip6="$SERVER_IPV6"
-	fi
-elif [ "$ip6" = "no" ] || [ "$ip6" = "none" ]; then
-	ip6=''
-fi
-IP6="$ip6"
-
 # Includes
 # shellcheck source=/etc/hestiacp/hestia.conf
 source /etc/hestiacp/hestia.conf
@@ -47,6 +38,20 @@ source $HESTIA/func/ip.sh
 source $HESTIA/func/syshealth.sh
 # load config file
 source_conf "$HESTIA/conf/hestia.conf"
+
+# Normalize IPv6 argument
+if [ -z "$ip6" ]; then
+	if [ "$IPV6_SUPPORT" = "yes" ]; then
+		ip6="${SERVER_IPV6:-yes}"
+	else
+		ip6=''
+	fi
+elif [ "$ip6" = "yes" ] || [ "$ip6" = "default" ]; then
+	ip6="${SERVER_IPV6:-yes}"
+elif [ "$ip6" = "no" ] || [ "$ip6" = "none" ] || [ "$ip6" = "off" ]; then
+	ip6=''
+fi
+IP6="$ip6"
 
 # Additional argument formatting
 format_domain
