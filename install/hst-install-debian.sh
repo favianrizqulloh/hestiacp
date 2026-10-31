@@ -1186,6 +1186,18 @@ fi
 # Restoring autostart policy
 rm -f /usr/sbin/policy-rc.d
 
+# If running directly from git repository, sync local files to /usr/local/hestia
+src_root="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -d "$src_root/bin" ] && [ -d "$src_root/func" ] && [ -d "$src_root/install" ]; then
+	echo "[ * ] Syncing repository files to $HESTIA..."
+	cp -rf "$src_root/bin" "$HESTIA/"
+	cp -rf "$src_root/func" "$HESTIA/"
+	cp -rf "$src_root/install" "$HESTIA/"
+	cp -rf "$src_root/web" "$HESTIA/"
+	chmod +x "$HESTIA"/bin/*
+	chmod +x "$HESTIA"/web/inc/mail-wrapper.php 2>/dev/null
+fi
+
 #----------------------------------------------------------#
 #                     Configure system                     #
 #----------------------------------------------------------#
@@ -1562,7 +1574,36 @@ openssl req -x509 -newkey rsa:4096 -days 36500 -keyout /etc/nginx/ssl/default/pr
 
 # Copy default IPv6 catch-all block if IPv6 is active in kernel
 if [ -f /proc/net/if_inet6 ] && [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" != "1" ]; then
-	cp -f $HESTIA_INSTALL_DIR/nginx/00-default-ip6.conf /etc/nginx/conf.d/
+	if [ -f "$HESTIA_INSTALL_DIR/nginx/00-default-ip6.conf" ]; then
+		cp -f "$HESTIA_INSTALL_DIR/nginx/00-default-ip6.conf" /etc/nginx/conf.d/
+	elif [ -f "$(dirname "$0")/deb/nginx/00-default-ip6.conf" ]; then
+		mkdir -p "$HESTIA_INSTALL_DIR/nginx"
+		cp -f "$(dirname "$0")/deb/nginx/00-default-ip6.conf" "$HESTIA_INSTALL_DIR/nginx/"
+		cp -f "$HESTIA_INSTALL_DIR/nginx/00-default-ip6.conf" /etc/nginx/conf.d/
+	else
+		cat << 'EOF' > /etc/nginx/conf.d/00-default-ip6.conf
+server {
+	listen      [::]:80 default_server;
+	server_name _;
+	access_log  off;
+	error_log   /dev/null;
+	return      444;
+}
+
+server {
+	listen              [::]:443 default_server ssl;
+	listen              [::]:443 quic reuseport default_server;
+	server_name         _;
+	access_log          off;
+	error_log           /dev/null;
+	ssl_certificate     /etc/nginx/ssl/default/cert.pem;
+	ssl_certificate_key /etc/nginx/ssl/default/privkey.pem;
+	return              444;
+}
+EOF
+		mkdir -p "$HESTIA_INSTALL_DIR/nginx"
+		cp -f /etc/nginx/conf.d/00-default-ip6.conf "$HESTIA_INSTALL_DIR/nginx/00-default-ip6.conf"
+	fi
 fi
 cp -f $HESTIA_INSTALL_DIR/nginx/status.conf /etc/nginx/conf.d/
 cp -f $HESTIA_INSTALL_DIR/nginx/0rtt-anti-replay.conf /etc/nginx/conf.d/
