@@ -121,17 +121,15 @@
 					</div>
 				</div>
 			</div>
-			<div class="form-check u-mb10">
 			<?php if (isset($_SESSION["IPV6_SUPPORT"]) && $_SESSION["IPV6_SUPPORT"] == "yes") { ?>
-				</div>
 				<div class="form-check u-mb10">
 					<input class="form-check-input" type="checkbox" name="v_ipv6" id="v_ipv6" <?php if ((!empty($v_ipv6) && $v_ipv6 == "yes") || (!empty($v_ip6) && $v_ip6 != "no")) echo "checked"; ?>>
 					<label for="v_ipv6">
 						<?= tohtml( _("Enable dual-stack IPv4 & IPv6 support")) ?>
 					</label>
 				</div>
-				<div class="form-check u-mb10">
 			<?php } ?>
+			<div class="form-check u-mb10">
 				<input x-model="redirectEnabled" class="form-check-input" type="checkbox" name="v-redirect-checkbox" id="v-redirect-checkbox">
 				<label for="v-redirect-checkbox">
 					<?= tohtml( _("Enable domain redirection")) ?>
