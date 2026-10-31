@@ -37,7 +37,12 @@ When maintaining or developing features in this repository, strictly adhere to t
    - When dual-stack is enabled, any domain (and specifically the hostname domain) MUST have `listen [::]:80;` alongside `listen [::]:443 ssl;` in NGINX.
    - Failure to bind `[::]:80` on the domain causes NGINX to route the ACME query to `00-default-ip6.conf`, terminating with `return 444;` (TCP RST) and triggering `Connection reset by peer`.
    - In `v-add-letsencrypt-host`, always auto-detect public IPv6, enable `v-change-web-domain-ip6`, and force a rebuild of the domain before requesting Let's Encrypt certificate issuance.
+   - In `v-add-letsencrypt-domain`, always pass `"yes"` to `$BIN/v-restart-web "yes"` and `$BIN/v-restart-proxy "yes"` to force an immediate reload rather than queueing under `SCHEDULED_RESTART`.
 
-6. **Installer Repository Directory Sync Invariant**:
+6. **Object Configuration Key Invariant (`add_object_key`)**:
+   - `update_object_value` only updates fields that already exist on a configuration line in `web.conf`.
+   - Before updating or setting `IP6`, always ensure `add_object_key "web" 'DOMAIN' "$domain" 'IP6' 'IP'` is called to guarantee the key exists in the record.
+
+7. **Installer Repository Directory Sync Invariant**:
    - When copying repository directories (`bin/`, `func/`, `install/`, `web/`) into existing Hestia installation directories (`/usr/local/hestia/`), always use `cp -rfT` (no-target-directory).
    - This prevents GNU `cp` from creating nested subdirectories such as `/usr/local/hestia/bin/bin` when the target directory already exists.
