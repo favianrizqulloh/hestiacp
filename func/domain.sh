@@ -316,7 +316,7 @@ add_web_config() {
 	# QUIC HTTP/3 support by default
 	if [[ "$2" =~ stpl$ ]]; then
 		if ! grep -q "quic" "$conf"; then
-			sed -i "s|listen.*$local_ip:$ssl_port ssl;|&\n\tlisten      $local_ip:$ssl_port quic;|g" "$conf"
+			sed -i "s|listen.*:$ssl_port ssl;|&\n\tlisten      $local_ip:$ssl_port quic;|g" "$conf"
 		fi
 		if ! grep -q "http3" "$conf"; then
 			sed -i "s|listen.*$local_ip:$ssl_port quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400' always;|g" "$conf"
@@ -332,11 +332,11 @@ add_web_config() {
 		if [ -f /proc/net/if_inet6 ] && [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" != "1" ]; then
 			if [[ "$2" =~ stpl$ ]]; then
 				if ! grep -q "listen.*\[::\]" "$conf"; then
-					sed -i "s|listen.*$local_ip:$ssl_port ssl;|&\n\tlisten      [::]:$ssl_port ssl;\n\tlisten      [::]:$ssl_port quic;|g" "$conf"
+					sed -i "s|listen.*:$ssl_port ssl;|&\n\tlisten      [::]:$ssl_port ssl;\n\tlisten      [::]:$ssl_port quic;|g" "$conf"
 				fi
 			else
 				if ! grep -q "listen.*\[::\]" "$conf"; then
-					sed -i "s|listen.*$local_ip:$port;|&\n\tlisten      [::]:$port;|g" "$conf"
+					sed -i "s|listen.*:$port;|&\n\tlisten      [::]:$port;|g" "$conf"
 				fi
 			fi
 		fi
@@ -1028,7 +1028,7 @@ add_webmail_config() {
 	# QUIC HTTP/3 support by default
 	if [[ "$2" =~ stpl$ ]]; then
 		if ! grep -q "quic" "$conf"; then
-			sed -i "s|listen.*$local_ip:$ssl_port ssl;|&\n\tlisten      $local_ip:$ssl_port quic;|g" "$conf"
+			sed -i "s|listen.*:$ssl_port ssl;|&\n\tlisten      $local_ip:$ssl_port quic;|g" "$conf"
 		fi
 		if ! grep -q "http3" "$conf"; then
 			sed -i "s|listen.*$local_ip:$ssl_port quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400' always;|g" "$conf"
@@ -1044,11 +1044,11 @@ add_webmail_config() {
 		if [ -f /proc/net/if_inet6 ] && [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" != "1" ]; then
 			if [[ "$2" =~ stpl$ ]]; then
 				if ! grep -q "listen.*\[::\]" "$conf"; then
-					sed -i "s|listen.*$local_ip:$ssl_port ssl;|&\n\tlisten      [::]:$ssl_port ssl;\n\tlisten      [::]:$ssl_port quic;|g" "$conf"
+					sed -i "s|listen.*:$ssl_port ssl;|&\n\tlisten      [::]:$ssl_port ssl;\n\tlisten      [::]:$ssl_port quic;|g" "$conf"
 				fi
 			else
 				if ! grep -q "listen.*\[::\]" "$conf"; then
-					sed -i "s|listen.*$local_ip:$port;|&\n\tlisten      [::]:$port;|g" "$conf"
+					sed -i "s|listen.*:$port;|&\n\tlisten      [::]:$port;|g" "$conf"
 				fi
 			fi
 		fi

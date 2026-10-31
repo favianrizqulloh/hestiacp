@@ -241,6 +241,7 @@ rebuild_web_domain_conf() {
 	# If IPV6_SUPPORT is enabled and domain has no IP6 set, auto-assign SERVER_IPV6
 	if [ "$IPV6_SUPPORT" = "yes" ] && [ -z "$IP6" ]; then
 		IP6="${SERVER_IPV6:-yes}"
+		add_object_key "web" 'DOMAIN' "$domain" 'IP6' 'IP'
 		update_object_value 'web' 'DOMAIN' "$domain" '$IP6' "$IP6"
 	fi
 

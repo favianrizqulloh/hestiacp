@@ -161,13 +161,13 @@ else
 	domain_redirect="$REDIRECT"
 	if [[ -n "$domain_redirect" ]]; then
 		domain_redirect_code="$REDIRECT_CODE"
-		$BIN/v-delete-web-domain-redirect $user $domain
+		$BIN/v-delete-web-domain-redirect $user $domain "yes"
 		deleted_redirect=1
 	fi
 
 	domain_forcessl="$SSL_FORCE"
 	if [[ "$domain_forcessl" == 'yes' ]]; then
-		$BIN/v-delete-web-domain-ssl-force $user $domain
+		$BIN/v-delete-web-domain-ssl-force $user $domain "yes"
 		deleted_force_ssl=1
 	fi
 fi
@@ -344,10 +344,10 @@ for auth in $authz; do
 					ln -s "$conf" "$sconf"
 				fi
 				if [ "$WEB_SYSTEM" = 'nginx' ]; then
-					$BIN/v-restart-web
+					$BIN/v-restart-web "yes"
 					check_result $? "Web restart failed" > /dev/null
 				elif [ -n "$PROXY_SYSTEM" ]; then
-					$BIN/v-restart-proxy
+					$BIN/v-restart-proxy "yes"
 					check_result $? "Proxy restart failed" > /dev/null
 				fi
 			else
@@ -380,10 +380,10 @@ for auth in $authz; do
 					ln -s "$conf" "$sconf"
 				fi
 				if [ "$WEB_SYSTEM" = 'nginx' ]; then
-					$BIN/v-restart-web
+					$BIN/v-restart-web "yes"
 					check_result $? "Web restart failed" > /dev/null
 				elif [ -n "$PROXY_SYSTEM" ]; then
-					$BIN/v-restart-proxy
+					$BIN/v-restart-proxy "yes"
 					check_result $? "Proxy restart failed" > /dev/null
 				fi
 			else
@@ -398,7 +398,7 @@ for auth in $authz; do
 			fi
 		fi
 		if [ "$WEB_SYSTEM" = 'nginx' ]; then
-			$BIN/v-restart-web
+			$BIN/v-restart-web "yes"
 			check_result $? "Web restart failed" > /dev/null
 		fi
 	fi
