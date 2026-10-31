@@ -1193,10 +1193,10 @@ rm -f /usr/sbin/policy-rc.d
 src_root="$(cd "$(dirname "$0")/.." && pwd)"
 if [ -d "$src_root/bin" ] && [ -d "$src_root/func" ] && [ -d "$src_root/install" ]; then
 	echo "[ * ] Syncing repository files to $HESTIA..."
-	cp -rf "$src_root/bin" "$HESTIA/"
-	cp -rf "$src_root/func" "$HESTIA/"
-	cp -rf "$src_root/install" "$HESTIA/"
-	cp -rf "$src_root/web" "$HESTIA/"
+	cp -rfT "$src_root/bin" "$HESTIA/bin"
+	cp -rfT "$src_root/func" "$HESTIA/func"
+	cp -rfT "$src_root/install" "$HESTIA/install"
+	cp -rfT "$src_root/web" "$HESTIA/web"
 	chmod +x "$HESTIA"/bin/*
 	chmod +x "$HESTIA"/web/inc/mail-wrapper.php 2>/dev/null
 fi
@@ -2443,11 +2443,39 @@ echo "[ * ] Configuring System IP..."
 $HESTIA/bin/v-update-sys-ip > /dev/null 2>&1
 
 # Get primary IP
-default_nic="$(ip -d -j route show | jq -r '.[] | if .dst == "default" then .dev else empty end')"
+default_nic="$(ip -d -j route show | jq -r '.[] | if .dst == "default" then .dev else empty end' | head -n1)"
 # IPv4
 primary_ipv4="$(ip -4 -d -j addr show "$default_nic" | jq -r '.[] | select(length > 0) | .addr_info[] | if .scope == "global" then .local else empty end' | head -n1)"
 # IPv6
-#primary_ipv6="$(ip -6 -d -j addr show "$default_nic" | jq -r '.[] | select(length > 0) | .addr_info[] | if .scope == "global" then .local else empty end' | head -n1)"
+primary_ipv6="$(ip -6 -d -j addr show "$default_nic" 2>/dev/null | jq -r '.[] | select(length > 0) | .addr_info[] | select(.scope == "global") | .local' 2>/dev/null | grep -E '^[23]' | head -n1)"
+if [ -z "$primary_ipv6" ]; then
+	primary_ipv6="$(ip -6 addr show scope global 2>/dev/null | grep inet6 | awk '{print $2}' | cut -d/ -f1 | grep -E '^[23]' | head -n1)"
+fi
+enable_ipv6="no"
+if [ -n "$primary_ipv6" ]; then
+	if [ "$interactive" = "yes" ]; then
+		echo
+		read -r -p "IPv6 is detected on this machine, would you like to enable dual-stack IPv4 & IPv6 setup? [y/n] " ipv6_choice
+		case "$ipv6_choice" in
+			[yY][eE][sS]|[yY]) enable_ipv6="yes" ;;
+			*) enable_ipv6="no" ;;
+		esac
+	else
+		enable_ipv6="yes"
+	fi
+fi
+
+if [ "$enable_ipv6" = "yes" ]; then
+	echo "[ * ] Enabling full dual-stack IPv4 & IPv6 configuration..."
+	write_config_value "IPV6_SUPPORT" "yes"
+	write_config_value "SERVER_IPV6" "$primary_ipv6"
+	# Configure Exim for IPv6
+	sed -i 's/disable_ipv6 = true/disable_ipv6 = false/g' /etc/exim4/exim4.conf.template 2>/dev/null
+	sed -i 's/hostlist relay_from_hosts = 127.0.0.1/hostlist relay_from_hosts = 127.0.0.1 : ::::1/g' /etc/exim4/exim4.conf.template 2>/dev/null
+	systemctl restart exim4 > /dev/null 2>&1
+else
+	write_config_value "IPV6_SUPPORT" "no"
+fi
 ip="$primary_ipv4"
 local_ip="$primary_ipv4"
 

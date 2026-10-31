@@ -304,26 +304,39 @@ add_web_config() {
 
 	process_http2_directive "$conf"
 
+	local port="$WEB_PORT"
+	local ssl_port="$WEB_SSL_PORT"
+	if [ -n "$PROXY_SYSTEM" ] && [ "$1" = "$PROXY_SYSTEM" ]; then
+		port="$PROXY_PORT"
+		ssl_port="$PROXY_SSL_PORT"
+	fi
+	port="${port:-80}"
+	ssl_port="${ssl_port:-443}"
+
 	# QUIC HTTP/3 support by default
 	if [[ "$2" =~ stpl$ ]]; then
 		if ! grep -q "quic" "$conf"; then
-			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT ssl;|&\n\tlisten      $local_ip:$WEB_SSL_PORT quic;|g" "$conf"
+			sed -i "s|listen.*$local_ip:$ssl_port ssl;|&\n\tlisten      $local_ip:$ssl_port quic;|g" "$conf"
 		fi
 		if ! grep -q "http3" "$conf"; then
-			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400' always;|g" "$conf"
+			sed -i "s|listen.*$local_ip:$ssl_port quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400' always;|g" "$conf"
 		fi
 	fi
 
 	# Dual-stack IPv6 binding
-	if [ -n "$IP6" ] && [ "$IP6" != "no" ]; then
+	local domain_ip6="$IP6"
+	if [ -z "$domain_ip6" ] && [ "$IPV6_SUPPORT" = "yes" ]; then
+		domain_ip6="${SERVER_IPV6:-yes}"
+	fi
+	if [ -n "$domain_ip6" ] && [ "$domain_ip6" != "no" ]; then
 		if [ -f /proc/net/if_inet6 ] && [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" != "1" ]; then
 			if [[ "$2" =~ stpl$ ]]; then
 				if ! grep -q "listen.*\[::\]" "$conf"; then
-					sed -i "s|listen.*$local_ip:$WEB_SSL_PORT ssl;|&\n\tlisten      [::]:$WEB_SSL_PORT ssl;\n\tlisten      [::]:$WEB_SSL_PORT quic;|g" "$conf"
+					sed -i "s|listen.*$local_ip:$ssl_port ssl;|&\n\tlisten      [::]:$ssl_port ssl;\n\tlisten      [::]:$ssl_port quic;|g" "$conf"
 				fi
 			else
 				if ! grep -q "listen.*\[::\]" "$conf"; then
-					sed -i "s|listen.*$local_ip:$WEB_PORT;|&\n\tlisten      [::]:$WEB_PORT;|g" "$conf"
+					sed -i "s|listen.*$local_ip:$port;|&\n\tlisten      [::]:$port;|g" "$conf"
 				fi
 			fi
 		fi
@@ -1003,26 +1016,39 @@ add_webmail_config() {
 
 	process_http2_directive "$conf"
 
+	local port="$WEB_PORT"
+	local ssl_port="$WEB_SSL_PORT"
+	if [ -n "$PROXY_SYSTEM" ] && [ "$1" = "$PROXY_SYSTEM" ]; then
+		port="$PROXY_PORT"
+		ssl_port="$PROXY_SSL_PORT"
+	fi
+	port="${port:-80}"
+	ssl_port="${ssl_port:-443}"
+
 	# QUIC HTTP/3 support by default
 	if [[ "$2" =~ stpl$ ]]; then
 		if ! grep -q "quic" "$conf"; then
-			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT ssl;|&\n\tlisten      $local_ip:$WEB_SSL_PORT quic;|g" "$conf"
+			sed -i "s|listen.*$local_ip:$ssl_port ssl;|&\n\tlisten      $local_ip:$ssl_port quic;|g" "$conf"
 		fi
 		if ! grep -q "http3" "$conf"; then
-			sed -i "s|listen.*$local_ip:$WEB_SSL_PORT quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400' always;|g" "$conf"
+			sed -i "s|listen.*$local_ip:$ssl_port quic;|&\n\thttp2 on;\n\thttp3 on;\n\tquic_retry on;\n\tadd_header Alt-Svc 'h3=\":443\"; ma=86400' always;|g" "$conf"
 		fi
 	fi
 
 	# Dual-stack IPv6 binding
-	if [ -n "$IP6" ] && [ "$IP6" != "no" ]; then
+	local domain_ip6="$IP6"
+	if [ -z "$domain_ip6" ] && [ "$IPV6_SUPPORT" = "yes" ]; then
+		domain_ip6="${SERVER_IPV6:-yes}"
+	fi
+	if [ -n "$domain_ip6" ] && [ "$domain_ip6" != "no" ]; then
 		if [ -f /proc/net/if_inet6 ] && [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" != "1" ]; then
 			if [[ "$2" =~ stpl$ ]]; then
 				if ! grep -q "listen.*\[::\]" "$conf"; then
-					sed -i "s|listen.*$local_ip:$WEB_SSL_PORT ssl;|&\n\tlisten      [::]:$WEB_SSL_PORT ssl;\n\tlisten      [::]:$WEB_SSL_PORT quic;|g" "$conf"
+					sed -i "s|listen.*$local_ip:$ssl_port ssl;|&\n\tlisten      [::]:$ssl_port ssl;\n\tlisten      [::]:$ssl_port quic;|g" "$conf"
 				fi
 			else
 				if ! grep -q "listen.*\[::\]" "$conf"; then
-					sed -i "s|listen.*$local_ip:$WEB_PORT;|&\n\tlisten      [::]:$WEB_PORT;|g" "$conf"
+					sed -i "s|listen.*$local_ip:$port;|&\n\tlisten      [::]:$port;|g" "$conf"
 				fi
 			fi
 		fi

@@ -53,6 +53,30 @@ if [ "$($BIN/v-list-web-domain $user $domain plain | cut -f 1)" != "$domain" ]; 
 	$BIN/v-add-web-domain "$user" "$domain"
 fi
 
+# Detect and auto-enable IPV6_SUPPORT if system has global IPv6 and it's unconfigured
+if [ -z "$IPV6_SUPPORT" ] || [ "$IPV6_SUPPORT" = "no" ]; then
+	if [ -f /proc/net/if_inet6 ] && [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" != "1" ]; then
+		detected_ip6="$(ip -6 addr show scope global 2>/dev/null | grep inet6 | awk '{print $2}' | cut -d/ -f1 | grep -E '^[23]' | head -n1)"
+		if [ -n "$detected_ip6" ]; then
+			IPV6_SUPPORT="yes"
+			SERVER_IPV6="$detected_ip6"
+			$BIN/v-change-sys-config-value "IPV6_SUPPORT" "yes"
+			$BIN/v-change-sys-config-value "SERVER_IPV6" "$detected_ip6"
+		fi
+	fi
+fi
+
+# Ensure hostname web domain has dual-stack IPv6 enabled if IPV6_SUPPORT is active
+if [ "$IPV6_SUPPORT" = "yes" ]; then
+	current_ip6=$(grep "DOMAIN='$domain'" $USER_DATA/web.conf 2>/dev/null | grep -o "IP6='[^']*'" | cut -d"'" -f2)
+	if [ -z "$current_ip6" ] || [ "$current_ip6" = "no" ]; then
+		$BIN/v-change-web-domain-ip6 "$user" "$domain" "${SERVER_IPV6:-yes}" "no"
+	fi
+fi
+
+# Always ensure web configuration is properly built before Let's Encrypt validation
+$BIN/v-rebuild-web-domain "$user" "$domain" "yes"
+
 # Validate web domain
 is_object_valid 'web' 'DOMAIN' "$domain"
 is_object_unsuspended 'web' 'DOMAIN' "$domain"

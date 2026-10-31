@@ -1190,10 +1190,10 @@ rm -f /usr/sbin/policy-rc.d
 src_root="$(cd "$(dirname "$0")/.." && pwd)"
 if [ -d "$src_root/bin" ] && [ -d "$src_root/func" ] && [ -d "$src_root/install" ]; then
 	echo "[ * ] Syncing repository files to $HESTIA..."
-	cp -rf "$src_root/bin" "$HESTIA/"
-	cp -rf "$src_root/func" "$HESTIA/"
-	cp -rf "$src_root/install" "$HESTIA/"
-	cp -rf "$src_root/web" "$HESTIA/"
+	cp -rfT "$src_root/bin" "$HESTIA/bin"
+	cp -rfT "$src_root/func" "$HESTIA/func"
+	cp -rfT "$src_root/install" "$HESTIA/install"
+	cp -rfT "$src_root/web" "$HESTIA/web"
 	chmod +x "$HESTIA"/bin/*
 	chmod +x "$HESTIA"/web/inc/mail-wrapper.php 2>/dev/null
 fi

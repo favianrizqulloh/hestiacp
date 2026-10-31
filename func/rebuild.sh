@@ -238,6 +238,12 @@ rebuild_web_domain_conf() {
 	is_ip_valid $IP
 	prepare_web_domain_values
 
+	# If IPV6_SUPPORT is enabled and domain has no IP6 set, auto-assign SERVER_IPV6
+	if [ "$IPV6_SUPPORT" = "yes" ] && [ -z "$IP6" ]; then
+		IP6="${SERVER_IPV6:-yes}"
+		update_object_value 'web' 'DOMAIN' "$domain" '$IP6' "$IP6"
+	fi
+
 	# Remove old web configuration files
 	if [ -f /etc/$WEB_SYSTEM/conf.d/$domain.conf ]; then
 		rm -f /etc/$WEB_SYSTEM/conf.d/$domain*.conf
