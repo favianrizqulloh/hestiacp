@@ -2305,6 +2305,7 @@ if [ "$enable_ipv6" = "yes" ]; then
 	# Configure Exim for IPv6
 	sed -i 's/disable_ipv6 = true/disable_ipv6 = false/g' /etc/exim4/exim4.conf.template 2>/dev/null
 	sed -i 's/hostlist relay_from_hosts = 127.0.0.1/hostlist relay_from_hosts = 127.0.0.1 : ::::1/g' /etc/exim4/exim4.conf.template 2>/dev/null
+	systemctl restart exim4 > /dev/null 2>&1
 else
 	write_config_value "IPV6_SUPPORT" "no"
 fi
