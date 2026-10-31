@@ -11,10 +11,13 @@ globs:
 
 When maintaining or developing features in this repository, strictly adhere to the following invariants:
 
-1. **Dual-Stack Default Server Separation**:
+1. **Dual-Stack Default Server Separation & Catch-All Flow**:
    - Never place wildcard `[::]:80 default_server` or `[::]:443 default_server ssl` inside per-IP configuration templates (such as `unassigned.inc` or `/etc/nginx/conf.d/$ip.conf`).
    - All IPv6 wildcard catch-all listeners must reside in a dedicated single file (`/etc/nginx/conf.d/00-default-ip6.conf`).
    - Per-IP files must only bind to their specific IPv4 socket (`directIP:80 default_server`, `directIP:443 default_server ssl`).
+   - Catch-all blocks (both IPv4 per-IP and IPv6 wildcard) MUST enforce the two-step flow:
+     - **Port 80 (HTTP)**: `return 301 https://$host$request_uri;` (redirect unassigned/direct IP to HTTPS).
+     - **Port 443 (HTTPS)**: Serve 100-year self-signed dummy certificate (`/etc/nginx/ssl/default/cert.pem`), enable HTTP/2 + HTTP/3 QUIC (`quic reuseport default_server`, `http2 on`, `http3 on`, `quic_retry on`, `add_header Alt-Svc 'h3=":443"; ma=86400' always;`), and terminate with `return 444;`.
 
 2. **Firewall Protocol Formatting**:
    - Always convert protocols to lowercase before passing to `ip6tables` (e.g. `proto_lower="${PROTOCOL,,}"`).
