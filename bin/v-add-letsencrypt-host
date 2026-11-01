@@ -47,12 +47,6 @@ is_system_enabled "$WEB_SYSTEM" 'WEB_SYSTEM'
 #                       Action                             #
 #----------------------------------------------------------#
 
-# Check if hostname already exists as domain
-if [ "$($BIN/v-list-web-domain $user $domain plain | cut -f 1)" != "$domain" ]; then
-	# Create web domain for hostname
-	$BIN/v-add-web-domain "$user" "$domain"
-fi
-
 # Detect and auto-enable IPV6_SUPPORT if system has global IPv6 and it's unconfigured
 if [ -z "$IPV6_SUPPORT" ] || [ "$IPV6_SUPPORT" = "no" ]; then
 	if [ -f /proc/net/if_inet6 ] && [ "$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)" != "1" ]; then
@@ -64,6 +58,12 @@ if [ -z "$IPV6_SUPPORT" ] || [ "$IPV6_SUPPORT" = "no" ]; then
 			$BIN/v-change-sys-config-value "SERVER_IPV6" "$detected_ip6"
 		fi
 	fi
+fi
+
+# Check if hostname already exists as domain
+if [ "$($BIN/v-list-web-domain $user $domain plain | cut -f 1)" != "$domain" ]; then
+	# Create web domain for hostname
+	$BIN/v-add-web-domain "$user" "$domain"
 fi
 
 # Ensure hostname web domain has dual-stack IPv6 enabled if IPV6_SUPPORT is active

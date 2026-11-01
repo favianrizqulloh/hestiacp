@@ -2493,18 +2493,42 @@ chmod 755 /backup/
 # Create cronjob to generate ssl
 echo "@reboot root sleep 10 && rm /etc/cron.d/hestia-ssl && PATH='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:' && /usr/local/hestia/bin/v-add-letsencrypt-host" > /etc/cron.d/hestia-ssl
 
-# Attempt to obtain Let's Encrypt SSL certificate for hostname immediately if DNS resolves
-resolved_ip=$(getent ahostsv4 "$servername" 2>/dev/null | head -n1 | awk '{print $1}')
-if [ -z "$resolved_ip" ] && command -v host > /dev/null 2>&1; then
-	resolved_ip=$(host "$servername" 2>/dev/null | head -n 1 | awk '{print $NF}')
+# Attempt to obtain Let's Encrypt SSL certificate for hostname immediately if public DNS resolves
+dns_matches="no"
+resolved_v4=""
+if command -v host > /dev/null 2>&1; then
+	resolved_v4=$(host -t A "$servername" 1.1.1.1 2>/dev/null | awk '/has address/ {print $NF}' | head -n 1)
+	[ -z "$resolved_v4" ] && resolved_v4=$(host -t A "$servername" 8.8.8.8 2>/dev/null | awk '/has address/ {print $NF}' | head -n 1)
+elif command -v dig > /dev/null 2>&1; then
+	resolved_v4=$(dig +short A "$servername" @1.1.1.1 2>/dev/null | head -n 1)
 fi
 
-if [ -n "$resolved_ip" ] && { [ "$resolved_ip" = "$ip" ] || [ "$resolved_ip" = "$pub_ipv4" ]; }; then
+resolved_v6=""
+if [ "$enable_ipv6" = "yes" ] || [ -n "$primary_ipv6" ]; then
+	if command -v host > /dev/null 2>&1; then
+		resolved_v6=$(host -t AAAA "$servername" 1.1.1.1 2>/dev/null | awk '/has IPv6 address/ {print $NF}' | head -n 1)
+		[ -z "$resolved_v6" ] && resolved_v6=$(host -t AAAA "$servername" 8.8.8.8 2>/dev/null | awk '/has IPv6 address/ {print $NF}' | head -n 1)
+	elif command -v dig > /dev/null 2>&1; then
+		resolved_v6=$(dig +short AAAA "$servername" @1.1.1.1 2>/dev/null | head -n 1)
+	fi
+fi
+
+if [ -n "$resolved_v4" ] && { [ "$resolved_v4" = "$ip" ] || [ "$resolved_v4" = "$pub_ipv4" ]; }; then
+	dns_matches="yes"
+fi
+if [ -n "$resolved_v6" ] && [ -n "$primary_ipv6" ] && [ "$resolved_v6" = "$primary_ipv6" ]; then
+	dns_matches="yes"
+fi
+
+if [ "$dns_matches" = "yes" ]; then
 	echo "[ * ] Requesting Let's Encrypt SSL certificate for $servername..."
-	SCHEDULED_RESTART="no" $HESTIA/bin/v-add-letsencrypt-host > /dev/null 2>&1
+	SCHEDULED_RESTART="no" $HESTIA/bin/v-add-letsencrypt-host >> $LOG 2>&1
 	if [ -f "$HESTIA/ssl/certificate.crt" ] && ! openssl x509 -in "$HESTIA/ssl/certificate.crt" -issuer -noout 2>/dev/null | grep -q "Hestia Control Panel"; then
 		echo "[ * ] Let's Encrypt SSL certificate installed successfully for $servername."
 		rm -f /etc/cron.d/hestia-ssl
+	else
+		echo "[ ! ] Note: Automatic Let's Encrypt SSL issuance for $servername did not complete yet."
+		echo "      Run 'v-add-letsencrypt-host' after installation to generate your trusted SSL certificate."
 	fi
 fi
 
