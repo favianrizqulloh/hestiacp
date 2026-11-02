@@ -162,6 +162,43 @@ for ip in $ips; do
 		netmask="$(convert_cidr "$prefixlen")"
 		$BIN/v-add-sys-ip "$ip" "$netmask" "$interface"
 	elif [ -e "/etc/nginx/conf.d/$ip.conf" ]; then
+		if grep -q "return 301 http:" "/etc/nginx/conf.d/$ip.conf" 2>/dev/null || grep -q "/var/www/html" "/etc/nginx/conf.d/$ip.conf" 2>/dev/null || ! grep -q "return 301 https:" "/etc/nginx/conf.d/$ip.conf" 2>/dev/null; then
+			if [ ! -f /etc/nginx/ssl/default/cert.pem ]; then
+				mkdir -p /etc/nginx/ssl/default
+				openssl req -x509 -newkey rsa:4096 -days 36500 -keyout /etc/nginx/ssl/default/privkey.pem -out /etc/nginx/ssl/default/cert.pem -subj "/CN=default" -nodes > /dev/null 2>&1
+			fi
+			if [ -f "$HESTIA_INSTALL_DIR/nginx/unassigned.inc" ] && grep -q "return 301 https:" "$HESTIA_INSTALL_DIR/nginx/unassigned.inc"; then
+				cp -f "$HESTIA_INSTALL_DIR/nginx/unassigned.inc" "/etc/nginx/conf.d/$ip.conf"
+			else
+				cat << 'EOF' > "/etc/nginx/conf.d/$ip.conf"
+server {
+	listen      directIP:80 default_server;
+	server_name _;
+	access_log  off;
+	error_log   /dev/null;
+	return      301 https://$host$request_uri;
+}
+
+server {
+	listen              directIP:443 default_server ssl;
+	listen              directIP:443 quic reuseport default_server;
+	server_name         _;
+	access_log          off;
+	error_log           /dev/null;
+	ssl_certificate     /etc/nginx/ssl/default/cert.pem;
+	ssl_certificate_key /etc/nginx/ssl/default/privkey.pem;
+
+	http2               on;
+	http3               on;
+	quic_retry          on;
+	add_header          Alt-Svc 'h3=":443"; ma=86400' always;
+
+	return              444;
+}
+EOF
+			fi
+			sed -i 's/directIP/'$ip'/g' "/etc/nginx/conf.d/$ip.conf"
+		fi
 		process_http2_directive "/etc/nginx/conf.d/$ip.conf"
 	fi
 done

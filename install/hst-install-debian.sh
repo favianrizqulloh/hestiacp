@@ -1611,6 +1611,10 @@ EOF
 		cp -f /etc/nginx/conf.d/00-default-ip6.conf "$HESTIA_INSTALL_DIR/nginx/00-default-ip6.conf"
 	fi
 fi
+if [ -f "$(dirname "$0")/deb/nginx/unassigned.inc" ]; then
+	mkdir -p "$HESTIA_INSTALL_DIR/nginx"
+	cp -f "$(dirname "$0")/deb/nginx/unassigned.inc" "$HESTIA_INSTALL_DIR/nginx/unassigned.inc"
+fi
 cp -f $HESTIA_INSTALL_DIR/nginx/status.conf /etc/nginx/conf.d/
 cp -f $HESTIA_INSTALL_DIR/nginx/0rtt-anti-replay.conf /etc/nginx/conf.d/
 cp -f $HESTIA_INSTALL_DIR/nginx/agents.conf /etc/nginx/conf.d/
