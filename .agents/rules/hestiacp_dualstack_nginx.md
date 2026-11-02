@@ -46,3 +46,15 @@ When maintaining or developing features in this repository, strictly adhere to t
 7. **Installer Repository Directory Sync Invariant**:
    - When copying repository directories (`bin/`, `func/`, `install/`, `web/`) into existing Hestia installation directories (`/usr/local/hestia/`), always use `cp -rfT` (no-target-directory).
    - This prevents GNU `cp` from creating nested subdirectories such as `/usr/local/hestia/bin/bin` when the target directory already exists.
+
+8. **Bash Pipe Negation Invariant (Shell Logic Bug)**:
+   - In bash, `! cmd | grep -q "..."` does NOT negate the grep result — the `!` only negates `cmd`, and bash's `if` sees `grep`'s exit code (the last command in the pipe).
+   - Whenever the intent is "if the combined pipeline does NOT match", always wrap the full pipeline in a subshell: `! (cmd | grep -q "...")`.
+   - Applies specifically in installer cert-check conditions (e.g. checking if the installed cert still has `"Hestia Control Panel"` as issuer).
+   - **Correct pattern**: `if [ -f "$cert" ] && ! (openssl x509 -in "$cert" -issuer -noout 2>/dev/null | grep -q "Hestia Control Panel"); then`
+   - **Wrong pattern** (silently broken): `if [ -f "$cert" ] && ! openssl x509 ... | grep -q "...; then`
+
+9. **Installer DNS Resolver Override for Let's Encrypt Detection**:
+   - The installer's automatic LE cert attempt must use public DNS resolvers (`1.1.1.1`, `8.8.8.8`) via `host -t A "$servername" 1.1.1.1` or `dig +short A "$servername" @1.1.1.1`.
+   - Never use `getent ahostsv4` or `hostname -i` to validate DNS — these read `/etc/hosts` first and may return `127.0.1.1` (loopback) even when the public A record is correct.
+   - Only attempt `v-add-letsencrypt-host` during installation when `$dns_matches = "yes"` (public DNS resolves to a matching public IP).
