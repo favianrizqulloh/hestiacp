@@ -55,14 +55,14 @@ if [ ! -f "${PRVKEY_FILE}" ]; then
 	regenerate_key=true
 else
 	key_bits=$(ssh-keygen -l -f "${PRVKEY_FILE}" 2>/dev/null | awk '{print $1}')
-	if [ -n "$key_bits" ] && [ "$key_bits" -lt 2048 ]; then
+	if [ -n "$key_bits" ] && [ "$key_bits" -lt 4096 ]; then
 		regenerate_key=true
 	fi
 fi
 
 if [ "$regenerate_key" = true ]; then
 	rm -f "${PRVKEY_FILE}" "${PUBKEY_FILE}"
-	ssh-keygen -q -b 2048 -t rsa -f "${PRVKEY_FILE}" -N ""
+	ssh-keygen -q -b 4096 -t rsa -f "${PRVKEY_FILE}" -N ""
 	rm -f "${PUBKEY_FILE}"
 	new_privkey=true
 fi

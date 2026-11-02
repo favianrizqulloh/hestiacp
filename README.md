@@ -46,7 +46,7 @@ Project infrastructure is partly provided by [infrahost](https://infrahost.ch/en
 - MariaDB/MySQL and/or PostgreSQL databases
 - Let's Encrypt SSL support with wildcard certificates
 - Dual-stack firewall with brute-force attack detection and IP lists (`iptables`, `ip6tables`, fail2ban, and ipset)
-- Web-based File Manager (FileGator) fully patched and compatible with Debian 13 (Trixie) and OpenSSH 9.8+ (2048-bit SFTP key support)
+- Web-based File Manager (FileGator) fully patched and compatible with Debian 13 (Trixie) and OpenSSH 9.8+ (4096-bit SFTP key support)
 
 ## Supported platforms and operating systems
 
@@ -115,7 +115,7 @@ Alternatively, You can use <https://hestiacp.com/install.html> which allows you 
 - **Dual-Stack Catch-All Block (`return 444;`)**: Unmatched direct IP requests or unassigned hostnames over both IPv4 and IPv6 are immediately dropped with HTTP status 444 (TCP reset / stream close) using dedicated certificates, shielding your server from automated scanners and preventing IP/domain bleed. The IPv6 catch-all is isolated in `/etc/nginx/conf.d/00-default-ip6.conf`, ensuring multi-IPv4 setups never encounter duplicate default server conflicts.
 - **Dual-Stack Firewall (`iptables` + `ip6tables`)**: Complete firewall synchronization with automatic lowercase protocol handling (`-p tcp`, `-p udp`, `-p ipv6-icmp`), explicit UDP 443 HTTP/3 rule placed above WEB, and native Neighbor Discovery protection.
 - **Control Panel SSL & HSTS Ready**: Secure panel access via `v-add-letsencrypt-host` to automatically issue trusted Let's Encrypt certificates for the control panel hostname on port 8083, eliminating browser HSTS blocks.
-- **Debian 13 (Trixie) Ready**: File Manager (FileGator) and SFTP subsystems are fully optimized for Debian 13 with 2048-bit RSA keys and modern OpenSSH 9.8+ cryptographic algorithms.
+- **Debian 13 (Trixie) Ready**: File Manager (FileGator) and SFTP subsystems are fully optimized for Debian 13 with 4096-bit RSA keys and modern OpenSSH 9.8+ cryptographic algorithms.
 
 ## Building and Installing from this Repository (Custom Build)
 
