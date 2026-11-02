@@ -40,6 +40,12 @@ PUBKEY_FILE="$HOMEDIR/$user/.ssh/hst-filemanager-key.pub"
 AUTHKEY_FILE="$HOMEDIR/$user/.ssh/authorized_keys"
 SSH_DIR="$HOMEDIR/$user/.ssh"
 
+if [ ! -d "$SSH_DIR" ]; then
+	mkdir -p "$SSH_DIR"
+	chmod 700 "$SSH_DIR"
+	chown ${user}: "$SSH_DIR"
+fi
+
 [ -z "$(readlink -f "$PRVKEY_FILE" | egrep "^$HOMEDIR/$user/.ssh/")" ] && check_result "$E_FORBIDEN" "Invalid private key file path"
 [ -z "$(readlink -f "$PUBKEY_FILE" | egrep "^$HOMEDIR/$user/.ssh/")" ] && check_result "$E_FORBIDEN" "Invalid public key file path"
 [ -z "$(readlink -f "$AUTHKEY_FILE" | egrep "^$HOMEDIR/$user/.ssh/")" ] && check_result "$E_FORBIDEN" "Invalid authorized keys path"
@@ -88,11 +94,20 @@ chown "hestiaweb": "${PRVKEY_FILE}"
 
 # Ensure file manager service account can traverse user's .ssh folder
 # to read the dedicated private key.
-if command -v setfacl > /dev/null 2>&1; then
-	setfacl -m u:hestiaweb:--x "${SSH_DIR}" > /dev/null 2>&1
+if command -v setfacl > /dev/null 2>&1 && setfacl -m u:hestiaweb:--x "${SSH_DIR}" > /dev/null 2>&1; then
+	:
 else
-	echo "Error: 'setfacl' is not available."
-	exit 1
+	chmod 711 "${SSH_DIR}"
+fi
+
+# Ensure SSH daemon accepts required algorithms for File Manager SFTP (phpseclib)
+if [ -d /etc/ssh/sshd_config.d ] && [ ! -f /etc/ssh/sshd_config.d/hestia-sftp.conf ]; then
+	cat << 'EOF' > /etc/ssh/sshd_config.d/hestia-sftp.conf
+KexAlgorithms +diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256
+PubkeyAcceptedKeyTypes +ssh-rsa
+HostKeyAlgorithms +ssh-rsa
+EOF
+	"$BIN/v-restart-service" ssh
 fi
 
 #----------------------------------------------------------#

@@ -150,9 +150,8 @@ chown hestiaweb: "${FM_INSTALL_DIR}/repository"
 
 "$BIN/v-change-sys-config-value" 'FILE_MANAGER' 'true'
 
-# Apply SSH config if running on Debian 13
-source /etc/os-release
-if [[ "$ID" == "debian" && "$VERSION_ID" -ge 13 ]]; then
+# Apply SSH config for File Manager SFTP compatibility (phpseclib)
+if [ -d /etc/ssh/sshd_config.d ]; then
 	_SFTP_CONF="/etc/ssh/sshd_config.d/hestia-sftp.conf"
 	cat << 'EOF' > "$_SFTP_CONF"
 KexAlgorithms +diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256
