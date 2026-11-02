@@ -198,10 +198,15 @@ server {
 EOF
 			fi
 			sed -i 's/directIP/'$ip'/g' "/etc/nginx/conf.d/$ip.conf"
+			restart_web="yes"
 		fi
 		process_http2_directive "/etc/nginx/conf.d/$ip.conf"
 	fi
 done
+
+if [ "$restart_web" = "yes" ]; then
+	$BIN/v-restart-web "yes"
+fi
 
 # Updating NAT
 pub_ipv4="$(curl -fsLm5 --retry 2 --ipv4 https://ip.hestiacp.com/)"

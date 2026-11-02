@@ -2416,7 +2416,9 @@ $HESTIA/bin/v-add-sys-filemanager quiet
 if [ -d /etc/ssh/sshd_config.d ]; then
 	cat << 'EOF' > /etc/ssh/sshd_config.d/hestia-sftp.conf
 KexAlgorithms +diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256
+MACs +hmac-sha2-256
 PubkeyAcceptedKeyTypes +ssh-rsa
+PubkeyAcceptedAlgorithms +ssh-rsa
 HostKeyAlgorithms +ssh-rsa
 EOF
 	systemctl restart ssh

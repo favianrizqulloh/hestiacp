@@ -101,13 +101,17 @@ else
 fi
 
 # Ensure SSH daemon accepts required algorithms for File Manager SFTP (phpseclib)
-if [ -d /etc/ssh/sshd_config.d ] && [ ! -f /etc/ssh/sshd_config.d/hestia-sftp.conf ]; then
-	cat << 'EOF' > /etc/ssh/sshd_config.d/hestia-sftp.conf
+if [ -d /etc/ssh/sshd_config.d ]; then
+	if [ ! -f /etc/ssh/sshd_config.d/hestia-sftp.conf ] || ! grep -q "MACs" /etc/ssh/sshd_config.d/hestia-sftp.conf; then
+		cat << 'EOF' > /etc/ssh/sshd_config.d/hestia-sftp.conf
 KexAlgorithms +diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256
+MACs +hmac-sha2-256
 PubkeyAcceptedKeyTypes +ssh-rsa
+PubkeyAcceptedAlgorithms +ssh-rsa
 HostKeyAlgorithms +ssh-rsa
 EOF
-	"$BIN/v-restart-service" ssh
+		"$BIN/v-restart-service" ssh
+	fi
 fi
 
 #----------------------------------------------------------#
