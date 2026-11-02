@@ -2649,7 +2649,7 @@ fi
 if [ "$dns_matches" = "yes" ]; then
 	echo "[ * ] Requesting Let's Encrypt SSL certificate for $servername..."
 	SCHEDULED_RESTART="no" $HESTIA/bin/v-add-letsencrypt-host >> $LOG 2>&1
-	if [ -f "$HESTIA/ssl/certificate.crt" ] && ! openssl x509 -in "$HESTIA/ssl/certificate.crt" -issuer -noout 2>/dev/null | grep -q "Hestia Control Panel"; then
+	if [ -f "$HESTIA/ssl/certificate.crt" ] && ! (openssl x509 -in "$HESTIA/ssl/certificate.crt" -issuer -noout 2>/dev/null | grep -q "Hestia Control Panel"); then
 		echo "[ * ] Let's Encrypt SSL certificate installed successfully for $servername."
 		rm -f /etc/cron.d/hestia-ssl
 	else
