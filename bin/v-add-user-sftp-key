@@ -61,7 +61,7 @@ fi
 if [ ! -f "${PRVKEY_FILE}" ] || [ -L "${PRVKEY_FILE}" ] \
 	|| [ "$(stat -c '%U' -- "${PRVKEY_FILE}")" != "$user" ]; then
 	user_exec rm -f -- "${PRVKEY_FILE}" "${PUBKEY_FILE}"
-	user_exec ssh-keygen -q -b 1024 -t rsa -f "${PRVKEY_FILE}" -N ""
+	user_exec ssh-keygen -q -b 4096 -t rsa -f "${PRVKEY_FILE}" -N ""
 	check_result $? "Unable to create file manager key"
 	user_exec rm -f -- "${PUBKEY_FILE}"
 	new_privkey=true
